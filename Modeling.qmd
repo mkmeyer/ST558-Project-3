@@ -9,16 +9,147 @@ editor: visual
 rm(list=ls())
 ```
 
+```{r}
+#Loading packages
+library("tidyverse")
+library("tidymodels")
+library("caret")
+library("yardstick")
+library("baguette")
+```
+
+Loading in the cleaned data
+
+```{r}
+#Reading in the data
+diabetes_data <- read.csv("diabetes_binary_health_indicators_BRFSS2015.csv")
+
+#is this a relative path?
+```
+
+```{r}
+#Selecting response and 3 chosen explanatory variables
+#Converting binary variables from numeric variables to factor variables
+diabetes_select <- diabetes_data |>
+  select(Diabetes_binary, BMI, HighBP, AnyHealthcare) |>
+  rename("diabetes_resp" = Diabetes_binary) |>
+  rename("bmi" = BMI) |>
+  rename("high_bp" = HighBP) |>
+  rename("healthcare_coverage" = AnyHealthcare) |>
+  mutate(diabetes_resp = factor(diabetes_resp, levels = c(0, 1), labels = c("no diabetes", "prediabetes or diabetes"))) |>
+  mutate(high_bp = factor(high_bp, levels = c(0, 1), labels =c("no high BP", "high BP"))) |>
+  mutate(healthcare_coverage = factor(healthcare_coverage, levels = c(0, 1), labels = c("no healthcare coverage", "any healthcare coverage")))
+```
+
 ## Introduction
 
 ## Modeling
 
 ### Splitting Data into Training and Testing
 
+```{r}
+set.seed(1234)
+
+diabetes_split <- initial_split(diabetes_select, prop = 0.70) #specifying a 70/30 split
+diabetes_train <- training(diabetes_split) #splitting training data
+diabetes_test <- testing(diabetes_split) #splitting testing data
+
+diabetes_folds <- vfold_cv(diabetes_train, 5) #creating 10 fold CV of the training data
+```
+
 ### Logistic Regression Models
+
+```{r}
+#Creating the spec for logistic models
+LR_spec <- logistic_reg() |>
+  set_engine("glm")
+```
+
+```{r}
+#Creating the first logistic model using 
+#Resting Blood Pressure, Sex, and Cholesterol as predictors
+LR1_rec <- recipe(diabetes_resp ~ high_bp + bmi + healthcare_coverage, data = diabetes_train) |>
+  step_normalize(bmi) |>
+  step_dummy(high_bp, healthcare_coverage)
+
+LR1_wkf <- workflow() |>
+  add_recipe(LR1_rec) |>
+  add_model(LR_spec)
+
+LR1_fit <- LR1_wkf |>
+  fit_resamples(diabetes_folds, metrics = metric_set(mn_log_loss))
+```
+
+```{r}
+#Creating the first logistic model using 
+#Max heart rate, Age, and Sex as predictors
+LR2_rec <- recipe(diabetes_resp ~ high_bp + healthcare_coverage, data = diabetes_train) |>
+  step_dummy(high_bp, healthcare_coverage)
+
+LR2_wkf <- workflow() |>
+  add_recipe(LR2_rec) |>
+  add_model(LR_spec)
+
+LR2_fit <- LR2_wkf |>
+  fit_resamples(diabetes_folds, metrics = metric_set(mn_log_loss))
+```
+
+```{r}
+#Creating the first logistic model using 
+#Max heart rate, Age, and Sex as predictors
+LR3_rec <- recipe(diabetes_resp ~ healthcare_coverage, data = diabetes_train) |>
+  step_dummy(healthcare_coverage)
+
+LR3_wkf <- workflow() |>
+  add_recipe(LR3_rec) |>
+  add_model(LR_spec)
+
+LR3_fit <- LR3_wkf |>
+  fit_resamples(diabetes_folds, metrics = metric_set(mn_log_loss))
+```
+
+```{r}
+rbind(LR1_fit |> collect_metrics(),
+      LR2_fit |> collect_metrics(),
+      LR3_fit |> collect_metrics()) |>
+  mutate(Model = c("Model1", "Model2", "Model3")) |>
+  select(Model, everything())
+```
 
 ### Classification Tree
 
+```{r}
+tree_rec <- recipe(diabetes_resp ~ ., data = diabetes_train) |>
+  #update_role(name, new_role = "ID") |>
+  #step_log(km_driven) |>
+  #step_rm(ex_showroom_price) |>
+  step_dummy(high_bp, healthcare_coverage) |>
+  step_normalize(bmi, -all_outcomes())
+
+tree_mod <- decision_tree(tree_depth = tune(), min_n = 200, cost_complexity = tune()) |>
+  set_engine("rpart") |>
+  set_mode("classification")
+
+tree_wkf <- workflow() |>
+  add_recipe(tree_rec) |>
+  add_model(tree_mod)
+
+tree_grid <- grid_regular(cost_complexity(),
+                          tree_depth(),
+                          levels = c(10, 5))
+
+tree_fits <- tree_wkf |> 
+  tune_grid(resamples = diabetes_folds,
+            grid = tree_grid, 
+            metrics = metric_set(mn_log_loss))
+
+tree_fits |> collect_metrics()
+```
+
 ### Random Forest
+
+```{r}
+
+```
 
 ### Final Model Selection

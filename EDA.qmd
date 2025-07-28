@@ -94,5 +94,4 @@ p <- ggplot(diabetes_select, aes(x = bmi, fill = diabetes_resp)) +
 p
 ```
 
-
 [Click here for the Modeling Page](Modeling.html)
