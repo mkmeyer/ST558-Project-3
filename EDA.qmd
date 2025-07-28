@@ -10,15 +10,89 @@ rm(list=ls())
 ```
 
 ```{r}
-#Reading in the data
-diabetes_data <- read.csv("diabetes_binary_health_indicators_BRFSS2015.csv")
+library("tidyverse")
 ```
+
 
 ## Introduction
 
 ## Data
 
+### Reading in the data
+
+```{r}
+#Reading in the data
+diabetes_data <- read.csv("diabetes_binary_health_indicators_BRFSS2015.csv")
+
+#is this a relative path?
+```
+
+### Cleaning the data
+
+```{r}
+#Selecting response and 3 chosen explanatory variables
+#Converting binary variables from numeric variables to factor variables
+diabetes_select <- diabetes_data |>
+  select(Diabetes_binary, BMI, HighBP, AnyHealthcare) |>
+  rename("diabetes_resp" = Diabetes_binary) |>
+  rename("bmi" = BMI) |>
+  rename("high_bp" = HighBP) |>
+  rename("healthcare_coverage" = AnyHealthcare) |>
+  mutate(diabetes_resp = factor(diabetes_resp, levels = c(0, 1), labels = c("no diabetes", "prediabetes or diabetes"))) |>
+  mutate(high_bp = factor(high_bp, levels = c(0, 1), labels =c("no high BP", "high BP"))) |>
+  mutate(healthcare_coverage = factor(healthcare_coverage, levels = c(0, 1), labels = c("no healthcare coverage", "any healthcare coverage")))
+```
+
+### Checking for Missingness
+
+```{r}
+colSums(is.na(diabetes_select))
+```
+
+
 ## Summarizations
+
+### Contingency Tables and Bar Charts
+
+```{r}
+diabetes_select |>
+  group_by(diabetes_resp, high_bp) |>
+  summarize(count = n()) |>
+  pivot_wider(names_from = high_bp, values_from = count)
+```
+
+```{r}
+diabetes_select |>
+  group_by(diabetes_resp, healthcare_coverage) |>
+  summarize(count = n()) |>
+  pivot_wider(names_from = healthcare_coverage, values_from = count)
+```
+
+```{r}
+diabetes_select |>
+  group_by(diabetes_resp, high_bp, healthcare_coverage) |>
+  summarize(count = n()) |>
+  pivot_wider(names_from = high_bp, values_from = count)
+```
+
+### Summarizing Center and Spread
+
+```{r}
+diabetes_select |>
+  group_by(diabetes_resp) |>
+  summarize(across(bmi, .fns = list("mean" = mean,
+                                    "median" = median, 
+                                    "var" = var,
+                                    "sd" = sd,
+                                    "IQR" = IQR), .names = "{.col} {.fn}"))
+```
+
+```{r}
+# Use semi-transparent fill
+p <- ggplot(diabetes_select, aes(x = bmi, fill = diabetes_resp)) +
+  geom_density(alpha=0.3)
+p
+```
 
 
 [Click here for the Modeling Page](Modeling.html)
