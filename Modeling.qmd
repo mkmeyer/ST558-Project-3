@@ -149,7 +149,49 @@ tree_fits |> collect_metrics()
 ### Random Forest
 
 ```{r}
+rf_spec <- rand_forest(mtry = tune()) |>
+  set_engine("ranger") |>
+  set_mode("classification")
 
+rf_wkf <- workflow() |>
+  add_recipe(LR1_rec) |>
+  add_model(rf_spec)
+
+rf_fit <- rf_wkf |>
+  tune_grid(resamples = diabetes_folds,
+            grid = 7,
+            metrics = metric_set(accuracy, mn_log_loss))
 ```
+
+
+```{r}
+rf_fit |>
+  collect_metrics() |>
+  filter(.metric == "mn_log_loss") |>
+  arrange(mean)
+```
+
+```{r}
+rf_fit |> 
+  collect_metrics() |>
+  filter(.metric == "mn_log_loss")
+```
+
+```{r}
+rf_best_params <- select_best(rf_fit, metric = "mn_log_loss")
+rf_best_params
+```
+
+```{r}
+rf_final_wkf <- rf_wkf |>
+ finalize_workflow(rf_best_params)
+rf_final_fit <- rf_final_wkf |>
+ last_fit(diabetes_split, metrics = metric_set(mn_log_loss))
+```
+
+```{r}
+rf_final_fit |> collect_metrics()
+```
+
 
 ### Final Model Selection

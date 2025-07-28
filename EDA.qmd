@@ -13,7 +13,6 @@ rm(list=ls())
 library("tidyverse")
 ```
 
-
 ## Introduction
 
 ## Data
@@ -48,7 +47,6 @@ diabetes_select <- diabetes_data |>
 ```{r}
 colSums(is.na(diabetes_select))
 ```
-
 
 ## Summarizations
 
