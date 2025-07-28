@@ -1,0 +1,24 @@
+---
+title: "EDA"
+format: html
+editor: visual
+---
+
+```{r, include=FALSE}
+#Clearing the working environment
+rm(list=ls())
+```
+
+```{r}
+#Reading in the data
+diabetes_data <- read.csv("diabetes_binary_health_indicators_BRFSS2015.csv")
+```
+
+## Introduction
+
+## Data
+
+## Summarizations
+
+
+[Click here for the Modeling Page](Modeling.html)
