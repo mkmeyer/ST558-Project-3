@@ -18,7 +18,15 @@ library("yardstick")
 library("baguette")
 ```
 
+
+
+
+
 Loading in the cleaned data
+
+
+
+
 
 ```{r}
 #Reading in the data
@@ -40,11 +48,19 @@ diabetes_select <- diabetes_data |>
   mutate(AnyHealthcare = as.factor(AnyHealthcare))
 ```
 
+
+
+
+
 ## Introduction
 
 ## Modeling
 
 ### Splitting Data into Training and Testing
+
+
+
+
 
 ```{r}
 set.seed(1234)
@@ -56,7 +72,15 @@ diabetes_test <- testing(diabetes_split) #splitting testing data
 diabetes_folds <- vfold_cv(diabetes_train, 5) #creating 10 fold CV of the training data
 ```
 
+
+
+
+
 ### Logistic Regression Models
+
+
+
+
 
 ```{r}
 #Creating the spec for logistic models
@@ -116,7 +140,15 @@ rbind(LR1_fit |> collect_metrics(),
   select(Model, everything())
 ```
 
+
+
+
+
 ### Classification Tree
+
+
+
+
 
 ```{r, warning=FALSE}
 tree_rec <- recipe(diabetes_resp ~ ., data = diabetes_train) |>
@@ -143,7 +175,15 @@ tree_fits <- tree_wkf |>
 tree_fits |> collect_metrics()
 ```
 
+
+
+
+
 ### Random Forest
+
+
+
+
 
 ```{r}
 rf_spec <- rand_forest(mtry = tune()) |>
@@ -159,7 +199,6 @@ rf_fit <- rf_wkf |>
             grid = 7,
             metrics = metric_set(accuracy, mn_log_loss))
 ```
-
 
 ```{r}
 rf_fit |>
@@ -191,4 +230,9 @@ rf_final_fit |> collect_metrics()
 ```
 
 
+
+
+
+
 ### Final Model Selection
+
