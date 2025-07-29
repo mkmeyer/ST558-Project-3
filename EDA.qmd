@@ -15,31 +15,37 @@ library("tidyverse")
 
 ## Introduction
 
+In this project, I analyze data on diabetes. These data are a subset of the Behavioral Risk Factor Surveillance System (BRFSS) which is an annual telephone survey conducted by the Centers for Disease Control (CDC). This subset includes responses from 253,680 people and was collected in 2015. This dataset contains information on whether the person does not have diabetes or if they have either pre-diabetes or diabetes, in addition to other numeric and categorical health indicators. There are binary, indicator variables describing whether or not the person has a history of high blood pressure, high cholesterol, smoking, stroke, coronary heart disease (CHD) or myocardial infarction (MI), physical activity in the past 30 days, daily fruit consumption, daily veggie consumption, alcohol consumption, healthcare coverage, missing medical care due to cost, and difficulty walking. There are also categorical variables with multiple levels describing the person's general health, mental health, and physical health as well as demographic characteristics like sex, age, education, and income. There is also a numeric variable, BMI or body mass index, calculated by (weight in kg)/(height in meters)^2. 
+
+The goal of this project is to develop a good model to model and make predictions about whether or not a person has diabetes. According to a CDC article published in 2024 (https://www.cdc.gov/diabetes/risk-factors/index.html), being overweight or obese, being 45 or older, having a close relative with Type 2 diabetes, being physically active 3 or fewer times in a week, having non-alcoholic fatty liver disease (NAFLD), having gestational diabetes, or being an African American, Hispanic or Latino, American Indian, or Alaska Native person are main factors associated with prediabetes and Type 2 diabetes. In our dataset, we have access to BMI (overweight or obesity), physical activity, and age. I will explore the summary and distribution of those three variables (BMI, physical activity, and age). 
+
 ## Data
 
 ### Reading in the data
 
+First, we read in the data. The data has been downloaded and stored in my GitHub repository, but was originally sourced from Kaggle (https://www.kaggle.com/datasets/alexteboul/diabetes-health-indicators-dataset/data). 
+
 ```{r}
 #Reading in the data
 diabetes_data <- read.csv("diabetes_binary_health_indicators_BRFSS2015.csv")
-
-#is this a relative path?
 ```
 
 ### Cleaning the data
 
+Next, we clean and manipulate the data. We select the four variables we are most interested in which are the response variable (whether or not the person has been diagnosed with pre-diabetes or diabetes) and three explanatory variables. The explanatory variables are whether the person is physically active (a binary variable), the person's BMI (a numeric variable), and the person's age (a categorical variable with 13 levels corresponding to different age groups). 
+
 ```{r}
 #Selecting response and 3 chosen explanatory variables
-#Converting binary variables from numeric variables to factor variables
+#Converting categorical variables from numeric variables to factor variables
 diabetes_select <- diabetes_data |>
-  select(Diabetes_binary, BMI, HighBP, AnyHealthcare) |>
+  select(Diabetes_binary, BMI, PhysActivity, Age) |>
   rename("diabetes_resp" = Diabetes_binary) |>
   rename("bmi" = BMI) |>
-  rename("high_bp" = HighBP) |>
-  rename("healthcare_coverage" = AnyHealthcare) |>
-  mutate(diabetes_resp = factor(diabetes_resp, levels = c(0, 1), labels = c("no diabetes", "prediabetes or diabetes"))) |>
-  mutate(high_bp = factor(high_bp, levels = c(0, 1), labels =c("no high BP", "high BP"))) |>
-  mutate(healthcare_coverage = factor(healthcare_coverage, levels = c(0, 1), labels = c("no healthcare coverage", "any healthcare coverage")))
+  rename("physical_activity" = PhysActivity) |>
+  rename("age" = Age) |>
+  mutate(diabetes_resp = factor(diabetes_resp, levels = c(0, 1), labels = c("No diabetes", "Prediabetes or diabetes"))) |>
+  mutate(physical_activity = factor(physical_activity, levels = c(0, 1), labels =c("No physical activity", "Physical activity"))) |>
+  mutate(age = factor(age, levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), labels = c("Age 18-24", "Age 25-29", "Age 30-34", "Age 35-39", "Age 40-44", "Age 45-49", "Age 50-54", "Age 55-59", "Age 60-64", "Age 65-69", "Age 70-74", "Age 75-79", "Age 80 or older")))
 ```
 
 ### Checking for Missingness
@@ -48,29 +54,50 @@ diabetes_select <- diabetes_data |>
 colSums(is.na(diabetes_select))
 ```
 
+After selecting our four variables, we check for missingness. None of our 4 variables have any missing values (hooray!) so we can proceed to further data visualizations and summaries. 
+
 ## Summarizations
 
 ### Contingency Tables and Bar Charts
 
-```{r}
-diabetes_select |>
-  group_by(diabetes_resp, high_bp) |>
-  summarize(count = n()) |>
-  pivot_wider(names_from = high_bp, values_from = count)
-```
+We will use contingency tables and bar charts to assess if there is a difference in diabetes rates at different levels of categorical variables. 
+
+First, we will look at diabetes rates among people who do physical activity vs those who do not. 
 
 ```{r}
 diabetes_select |>
-  group_by(diabetes_resp, healthcare_coverage) |>
+  group_by(diabetes_resp, physical_activity) |>
   summarize(count = n()) |>
-  pivot_wider(names_from = healthcare_coverage, values_from = count)
+  mutate(percentage = count / sum(count) * 100) |>
+  pivot_wider(names_from = physical_activity,
+              values_from = c(count, percentage),
+              names_glue = "{physical_activity} {.value}")
 ```
 
 ```{r}
+# Stacked barplot with multiple groups
+ggplot(data = diabetes_select, aes(x = physical_activity, y = diabetes_resp)) +
+  geom_bar(stat="identity", fill = "blue") +
+  labs(title = "Diabetes and Physical Activity", x = "Physical Activity", y = "Diabetes Count")
+```
+
+Next, we will look at diabetes rates across the 13 different age groups. 
+
+```{r}
 diabetes_select |>
-  group_by(diabetes_resp, high_bp, healthcare_coverage) |>
+  group_by(diabetes_resp, age) |>
   summarize(count = n()) |>
-  pivot_wider(names_from = high_bp, values_from = count)
+  mutate(percentage = count / sum(count) * 100) |>
+  pivot_wider(names_from = age,
+              values_from = c(count, percentage),
+              names_glue = "{age} {.value}")
+```
+
+```{r}
+# Stacked barplot with multiple groups
+ggplot(data = diabetes_select, aes(x = age, y = diabetes_resp)) +
+  geom_bar(stat="identity", fill = "blue") +
+  labs(title = "Diabetes and Age Groups", x = "Age", y = "Diabetes Count")
 ```
 
 ### Summarizing Center and Spread
