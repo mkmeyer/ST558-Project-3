@@ -10,33 +10,26 @@
 library(plumber)
 
 # Reading in the data
-diabetes_data <- read.csv("diabetes_binary_health_indicators_BRFSS2015.csv")
+#diabetes_data <- read.csv("diabetes_binary_health_indicators_BRFSS2015.csv")
+
+# Fitting the best model
 
 
 #* @apiTitle Plumber Example API
 #* @apiDescription Plumber example description.
 
-#* Echo back the input
+#* Creating predictions using the best model
 #* @param msg The message to echo
-#* @get /echo
+#* @get /pred
 function(msg = "") {
     list(msg = paste0("The message is: '", msg, "'"))
 }
 
-#* Plot a histogram
-#* @serializer png
-#* @get /plot
+#* Displaying author and GitHub information
+#* @serializer html
+#* @get /info
 function() {
-    rand <- rnorm(100)
-    hist(rand)
-}
-
-#* Return the sum of two numbers
-#* @param a The first number to add
-#* @param b The second number to add
-#* @post /sum
-function(a, b) {
-    as.numeric(a) + as.numeric(b)
+    "Makenna Meyer, GitHub URL: https://mkmeyer.github.io/ST558-Project-3/"
 }
 
 # Programmatically alter your API
