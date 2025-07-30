@@ -32,13 +32,13 @@ LR1_fit <- glm(diabetes_resp ~ phys_activity + bmi + age + HvyAlcoholConsump + A
 #* @apiDescription Plumber example description.
 
 #* Creating predictions using the best model
-#* @param bmi BMI
-#* @param phys_activity Physical activity in the last 30 days
-#* @param age age group
-#* @param HvyAlcoholConsump heavy alcohol consumption
-#* @param AnyHealthcare any healthcare coverage
+#* @param bmi BMI (range from 0 to 100)
+#* @param phys_activity Physical activity in the last 30 days (either 1 = yes or 0 = no)
+#* @param age age group (range from 1 to 13)
+#* @param HvyAlcoholConsump heavy alcohol consumption (either 1 = yes or 0 = no)
+#* @param AnyHealthcare any healthcare coverage (either 1 = yes or 0 = no)
 #* @get /pred
-function(bmi, phys_activity, age) {
+function(bmi, phys_activity, age, HvyAlcoholConsump, AnyHealthcare) {
     predictor_data <- tibble(as.numeric(bmi), 
                              as.factor(phys_activity), 
                              as.factor(age), 
@@ -51,7 +51,6 @@ function(bmi, phys_activity, age) {
 }
 
 #* Displaying author and GitHub information
-#* @serializer html
 #* @get /info
 function() {
     "Makenna Meyer, GitHub URL: https://mkmeyer.github.io/ST558-Project-3/EDA.html"
