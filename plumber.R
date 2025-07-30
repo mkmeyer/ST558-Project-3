@@ -8,6 +8,7 @@
 #
 
 library(plumber)
+library(tidyverse)
 
 #Reading in the data
 diabetes_data <- read.csv("diabetes_binary_health_indicators_BRFSS2015.csv")
@@ -38,7 +39,7 @@ LR1_fit <- glm(diabetes_resp ~ phys_activity + bmi + age + HvyAlcoholConsump + A
 #* @param HvyAlcoholConsump heavy alcohol consumption (either 1 = yes or 0 = no)
 #* @param AnyHealthcare any healthcare coverage (either 1 = yes or 0 = no)
 #* @get /pred
-function(bmi, phys_activity, age, HvyAlcoholConsump, AnyHealthcare) {
+function(bmi = 28.38, phys_activity = 1, age = 9, HvyAlcoholConsump = 0, AnyHealthcare = 1) {
     predictor_data <- tibble(as.numeric(bmi), 
                              as.factor(phys_activity), 
                              as.factor(age), 

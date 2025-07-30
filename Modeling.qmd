@@ -303,8 +303,8 @@ To determine the best model, I will compare the log losses from each of the thre
 The form of the fitted model on the whole data is:
 
 ```{r}
-LR1_wkf %>%
-  fit(data = diabetes_select) %>%
+LR1_wkf |>
+  fit(data = diabetes_select) |>
   tidy()
 ```
 
