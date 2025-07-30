@@ -9,7 +9,7 @@ editor: visual
 rm(list=ls())
 ```
 
-Before beginning the EDA, it is important to load the necessary libraries! 
+Before beginning the EDA, it is important to load the necessary libraries!
 
 ```{r, warning=FALSE, message=FALSE}
 library("tidyverse")
@@ -83,9 +83,9 @@ diabetes_select |>
                                     "IQR" = IQR), .names = "{.col} {.fn}"))
 ```
 
-In general, the mean and median for BMI are very similar. This indicates that the data are roughly distributed symmetrically rather than skewed. However, we also see that there is decent variance. I am curious to explore that variance further and understand how the variance could potentially relate to diabetes diagnoses. 
+In general, the mean and median for BMI are very similar. This indicates that the data are roughly distributed symmetrically rather than skewed. However, we also see that there is decent variance. I am curious to explore that variance further and understand how the variance could potentially relate to diabetes diagnoses.
 
-#### Physical Activity 
+#### Physical Activity
 
 Second, we will look at the variable for physical activity. This is a binary variable where the value of 1 indicates that the person had done some physical activity outside of their job in the last 30 days while a value of 0 indicates that they had not.
 
@@ -132,7 +132,7 @@ ggplot(data = age_groups, aes(x = age, y = count)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-This plot shows that there is a gentle left  skew in the age group data. Overall, it appears like we have a lot of observations from many different age groups as each group n is at least 5,700. The CDC article stated that diabetes is more common in people aged 45 and above. I am curious how the distribution of diabetes overlaps with the distribution of age groups.
+This plot shows that there is a gentle left skew in the age group data. Overall, it appears like we have a lot of observations from many different age groups as each group n is at least 5,700. The CDC article stated that diabetes is more common in people aged 45 and above. I am curious how the distribution of diabetes overlaps with the distribution of age groups.
 
 #### Diabetes
 
@@ -142,7 +142,7 @@ Finally, we will look at the response variable. This variable describes whether 
 addmargins(table(diabetes_select$diabetes_resp))
 ```
 
-This table shows that not being diagnosed with diabetes is significantly more common than having a pre-diabetes or diabetes diagnosis. I am mostly curious how the distribution of diabetes changes based on the level of predictor variables. I will explore that further in the following contingency tables and bar charts. 
+This table shows that not being diagnosed with diabetes is significantly more common than having a pre-diabetes or diabetes diagnosis. I am mostly curious how the distribution of diabetes changes based on the level of predictor variables. I will explore that further in the following contingency tables and bar charts.
 
 ### Contingency Tables and Bar Charts
 
@@ -177,6 +177,8 @@ ggplot(data = phys_act_groups,
        y = "Count", fill = "Diabetes Response")
 ```
 
+The counts and percentages displayed in the table and the visual bar chart reveal that diabetes diagnoses are much more prevalent among people who have not exercised outside of their job in the past 30 days.
+
 #### Age Groups
 
 Next, we will look at diabetes rates across the 13 different age groups.
@@ -205,6 +207,8 @@ ggplot(data = age_groups, aes(x = age, y = count, fill = diabetes)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
+The counts and percentages displayed in the table and the visual bar chart reveal that diabetes diagnoses are slightly more prevalent among older people. This effect appears to peak around the ages of 60-80. 
+
 ### Summarizing Center and Spread
 
 #### BMI
@@ -227,5 +231,7 @@ p <- ggplot(diabetes_select, aes(x = bmi, fill = diabetes_resp)) +
        x = "BMI", y = "Density", fill = "Diabetes Diagnosis")
 p
 ```
+
+The table of mean BMIs and the plot show that those with pre-diabetes or diabetes have higher BMIs than those who do not. 
 
 [Click here for the Modeling Page](Modeling.html)

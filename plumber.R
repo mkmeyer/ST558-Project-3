@@ -29,7 +29,7 @@ function(msg = "") {
 #* @serializer html
 #* @get /info
 function() {
-    "Makenna Meyer, GitHub URL: https://mkmeyer.github.io/ST558-Project-3/"
+    "Makenna Meyer, GitHub URL: https://mkmeyer.github.io/ST558-Project-3/EDA.html"
 }
 
 # Programmatically alter your API
