@@ -9,6 +9,8 @@ editor: visual
 rm(list=ls())
 ```
 
+Before beginning to create models, it is important to load the necessary libraries! 
+
 ```{r, warning=FALSE, message=FALSE}
 #Loading packages
 library("tidyverse")
@@ -18,7 +20,7 @@ library("yardstick")
 library("baguette")
 ```
 
-Loading in the cleaned data
+It is also important to load in and clean the data. 
 
 ```{r}
 #Reading in the data
@@ -42,21 +44,33 @@ diabetes_select <- diabetes_data |>
 
 ## Introduction
 
+In this project, I am analyzing data on diabetes. These data are a subset of the Behavioral Risk Factor Surveillance System (BRFSS) which is an annual telephone survey conducted by the Centers for Disease Control (CDC). This subset includes responses from 253,680 people and was collected in 2015. This dataset contains information on whether the person does not have diabetes or if they have either pre-diabetes or diabetes, in addition to other numeric and categorical health indicators. There are binary, indicator variables describing whether or not the person has a history of high blood pressure, high cholesterol, smoking, stroke, coronary heart disease (CHD) or myocardial infarction (MI), physical activity in the past 30 days, daily fruit consumption, daily veggie consumption, alcohol consumption, healthcare coverage, missing medical care due to cost, and difficulty walking. 
+
+In the EDA, I chose to focus on 3 explanatory variables in particular (BMI, physical activity, and age) based on information from a CDC article published in 2024. In modeling, I will expand the variables I examine to include other potential factors. I wanted to choose factors that may capture new elements of a person's overall health. That is, I wanted to pick variables where I wouldn't necessarily expect to see strong correlations with BMI, physical activity, or age. I added the variables for heavy alcohol consumption and healthcare access. My goal is that the models I create will indicate whether the factors mentioned in the CDC article are sufficient to predict a diabetes diagnosis or if additional, new measures are also informative. 
+
 ## Modeling
 
 ### Splitting Data into Training and Testing
 
+The first step for modeling is to split data into training and testing sets. This allows us to create models using one set of data and then test those models on another, different set of data. This helps us make sure that our model is can actually predict patterns in the data rather than just inform us about the characteristics of the data we trained it on. In this case, we are splitting the data 70/30. This provides us a majority of the data to train on, which is useful because our model will be more informed, while it also leads sufficient data to test on. 
+
 ```{r}
-set.seed(1234)
+set.seed(1234) #setting seed to allow for exact replication of the random selection used to split the data
 
 diabetes_split <- initial_split(diabetes_select, prop = 0.70) #specifying a 70/30 split
 diabetes_train <- training(diabetes_split) #splitting training data
 diabetes_test <- testing(diabetes_split) #splitting testing data
+```
 
+In addition to splitting the data into training and testing, we also use 5 fold cross validation. This allows us to use all of our data as both part of the training set and as part of the testing set, which helps us extract the most information and use from the data. In a 5 fold cross validation, 4 folds are used as training data and 1 fold is used as testiing data. 
+
+```{r}
 diabetes_folds <- vfold_cv(diabetes_train, 5) #creating 10 fold CV of the training data
 ```
 
 ### Logistic Regression Models
+
+The first type of model we will use is a logistic regression model. We use logistic regression models when the response variable is binary, as in this case where we have the responses 1 corresponding to pre-diabetes or diabetes and 0 corresponding to no diabetes, because there is no longer a continuous outcome that we are predicting. In that way, we can no longer predict the change in the outcome for a one unit increase in a predictor variable the way that we would in a linear regression. Instead, logistic regression allows us to predict the log odds and to interpret predictor variable coefficients for their impact on the log odds.  
 
 ```{r}
 #Creating the spec for logistic models
@@ -64,46 +78,62 @@ LR_spec <- logistic_reg() |>
   set_engine("glm")
 ```
 
+The first model I wanted to test includes all 5 predictors that I am curious about: BMI, physical activity, age, heavy alcohol consumption, and healthcare. 
+
 ```{r}
-#Creating the first logistic model using 
-#Resting Blood Pressure, Sex, and Cholesterol as predictors
+#Creating the first logistic model using all 5 predictors
+#BMI, Physical Activity, Age, Heavy Alcohol Consumption, Any Healthcare
 LR1_rec <- recipe(diabetes_resp ~ physical_activity + bmi + age + HvyAlcoholConsump + AnyHealthcare, data = diabetes_train) |>
-  step_normalize(bmi) |>
+  #normalizing the numeric variables
+  step_normalize(bmi) |> 
+  #creating dummy variables for the categorical variables
   step_dummy(physical_activity, age, HvyAlcoholConsump, AnyHealthcare)
 
 LR1_wkf <- workflow() |>
-  add_recipe(LR1_rec) |>
-  add_model(LR_spec)
+  add_recipe(LR1_rec) |> #model 1 recipe
+  add_model(LR_spec) #logistic model spec
 
+#finding the best coefficients for this model by resampling using 5 fold cross-validation
 LR1_fit <- LR1_wkf |>
   fit_resamples(diabetes_folds, metrics = metric_set(mn_log_loss))
 ```
 
+The second model I wanted to test includes 4 predictors (BMI, physical activity, heavy alcohol consumption, and healthcare access) but does not include the variable demographic variable age. I was curious whether demographics, which a person has less control over, play a role so I chose to create a model without them. 
+
 ```{r}
-#Creating the first logistic model using 
-#Max heart rate, Age, and Sex as predictors
+#Creating the second logistic model using non-Demographic predictors
+#BMI, physical activity, heavy alcohol consumption, and healthcare as predictors
 LR2_rec <- recipe(diabetes_resp ~ bmi + physical_activity + HvyAlcoholConsump + AnyHealthcare, data = diabetes_train) |>
+  #normalizing the numeric variables
+  step_normalize(bmi) |> 
+  #creating dummy variables for the categorical variables
   step_dummy(physical_activity, HvyAlcoholConsump, AnyHealthcare)
 
 LR2_wkf <- workflow() |>
-  add_recipe(LR2_rec) |>
-  add_model(LR_spec)
+  add_recipe(LR2_rec) |> #model 2 recipe
+  add_model(LR_spec) #logistic model spec
 
+#finding the best coefficients for this model by resampling using 5 fold cross-validation
 LR2_fit <- LR2_wkf |>
   fit_resamples(diabetes_folds, metrics = metric_set(mn_log_loss))
 ```
 
+The third model I wanted to test includes only the 3 predictors I used in the EDA. I chose those 3 variables because they were mentioned in a CDC article about diabetes predictors. I am curious if this model performs better than the model with additional predictors, or if these three predictors are truly informative enough on their own such that adding more variables leads to over parameterization. 
+
 ```{r}
-#Creating the first logistic model using 
-#Max heart rate, Age, and Sex as predictors
+#Creating the final logistic model using 
+#BMI, physical activity, and age as predictors
 LR3_rec <- recipe(diabetes_resp ~ bmi + physical_activity + age, data = diabetes_train) |>
+  #normalizing the numeric variables
   step_normalize(bmi) |>
+  #creating dummy variables for the categorical variables
   step_dummy(physical_activity, age)
 
 LR3_wkf <- workflow() |>
-  add_recipe(LR3_rec) |>
-  add_model(LR_spec)
+  add_recipe(LR3_rec) |> #model 3 recipe
+  add_model(LR_spec) #logistic model spec
 
+#finding the best coefficients for this model by resampling using 5 fold cross-validation
 LR3_fit <- LR3_wkf |>
   fit_resamples(diabetes_folds, metrics = metric_set(mn_log_loss))
 ```
@@ -119,7 +149,7 @@ rbind(LR1_fit |> collect_metrics(),
 ### Classification Tree
 
 ```{r, warning=FALSE}
-tree_rec <- recipe(diabetes_resp ~ ., data = diabetes_train) |>
+tree_rec <- recipe(diabetes_resp ~ physical_activity + bmi + age + HvyAlcoholConsump + AnyHealthcare, data = diabetes_train) |>
   step_dummy(physical_activity, HvyAlcoholConsump, AnyHealthcare) |>
   step_normalize(bmi, -all_outcomes())
 
@@ -143,6 +173,37 @@ tree_fits <- tree_wkf |>
 tree_fits |> collect_metrics()
 ```
 
+```{r}
+tree_best_params <- select_best(tree_fits, metric = "mn_log_loss")
+tree_best_params
+```
+
+```{r}
+tree_final_wkf <- tree_wkf |>
+  finalize_workflow(tree_best_params)
+```
+
+```{r}
+tree_final_fit <- tree_final_wkf |>
+  last_fit(diabetes_split)
+tree_final_fit
+```
+
+```{r}
+tree_final_fit |> collect_metrics()
+```
+
+```{r}
+tree_final_model <- extract_workflow(tree_final_fit) 
+tree_final_model
+```
+
+```{r}
+tree_final_model %>%
+  extract_fit_engine() %>%
+  rpart.plot::rpart.plot(roundint = FALSE)
+```
+
 ### Random Forest
 
 ```{r}
@@ -159,7 +220,6 @@ rf_fit <- rf_wkf |>
             grid = 7,
             metrics = metric_set(accuracy, mn_log_loss))
 ```
-
 
 ```{r}
 rf_fit |>
@@ -182,6 +242,7 @@ rf_best_params
 ```{r}
 rf_final_wkf <- rf_wkf |>
  finalize_workflow(rf_best_params)
+
 rf_final_fit <- rf_final_wkf |>
  last_fit(diabetes_split, metrics = metric_set(mn_log_loss))
 ```
@@ -190,5 +251,26 @@ rf_final_fit <- rf_final_wkf |>
 rf_final_fit |> collect_metrics()
 ```
 
+```{r}
+rf_final_model <- extract_workflow(rf_final_fit) 
+rf_final_model
+```
 
 ### Final Model Selection
+
+Final Metrics from the Logistic Regression Model
+```{r}
+LR1_fit |> collect_metrics()
+```
+
+Final Metrics from the Classification Model
+```{r}
+tree_final_fit |>
+  collect_metrics()
+```
+
+Final Metrics from the Random Forest Model
+```{r}
+rf_final_fit |> collect_metrics()
+```
+

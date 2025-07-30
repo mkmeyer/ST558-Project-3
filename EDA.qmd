@@ -9,6 +9,8 @@ editor: visual
 rm(list=ls())
 ```
 
+Before beginning the EDA, it is important to load the necessary libraries! 
+
 ```{r, warning=FALSE, message=FALSE}
 library("tidyverse")
 ```
