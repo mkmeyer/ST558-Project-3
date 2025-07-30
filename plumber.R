@@ -51,6 +51,11 @@ function(bmi = 28.38, phys_activity = 1, age = 9, HvyAlcoholConsump = 0, AnyHeal
     list(model_prediction = as.character(model_prediction))
 }
 
+#Example API URLs
+#http://127.0.0.1:14385/pred?bmi=28.38&phys_activity=1&age=9&HvyAlcoholConsump=0&AnyHealthcare=1
+#http://127.0.0.1:14385/pred?bmi=44&phys_activity=0&age=4&HvyAlcoholConsump=1&AnyHealthcare=1
+#http://127.0.0.1:14385/pred?bmi=75&phys_activity=0&age=6&HvyAlcoholConsump=1&AnyHealthcare=0 
+
 #* Displaying author and GitHub information
 #* @get /info
 function() {
