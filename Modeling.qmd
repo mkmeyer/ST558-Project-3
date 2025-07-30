@@ -152,7 +152,7 @@ The log loss values displayed above show that logistic regression model 1 (which
 
 ### Classification Tree
 
-A classification tree contains a series of binary questions based on the value of predictor variables from a dataset. The series of binary split points will eventually lead to a prediction of the response variable. In this case, our predictor variables are BMI, physical activity, and age and our response variable is whether or not a person has diabetes. I chose to use the original CDC variables model with just BMI, physical activity, and age to make the tree simpler and with less computation cost. 
+A classification tree contains a series of binary questions based on the value of predictor variables from a dataset. The series of binary split points will eventually lead to a prediction of the response variable. Classification trees are useful because they can be used with both categorical and numeric predictors, and they can help capture complicated relationships amongst variables In this case, our predictor variables are BMI, physical activity, and age and our response variable is whether or not a person has diabetes. I chose to use the original CDC variables model with just BMI, physical activity, and age to make the tree simpler and with less computation cost.
 
 ```{r, warning=FALSE}
 tree_rec <- recipe(diabetes_resp ~ physical_activity + bmi + age, data = diabetes_train) |>
@@ -179,8 +179,10 @@ tree_fits <- tree_wkf |>
             grid = tree_grid, #using the 25 combination grid from above
             metrics = metric_set(mn_log_loss)) #specifying log loss as the metric
 
-tree_fits |> collect_metrics() #displaying the log loss for the 25 model combinations
+tree_fits |> collect_metrics()
+```
 
+```{r}
 #identifying the ideal cost complexity and tree depth parameters
 tree_best_params <- select_best(tree_fits, metric = "mn_log_loss")
 
@@ -194,16 +196,20 @@ tree_final_fit <- tree_final_wkf |>
 
 #returning the metrics from the classification tree on the whole data
 tree_final_fit |> collect_metrics()
+
+tree_best_params
 ```
 
-The steps performed above returned this tree. 
+After creating 25 different combinations of cost complexity and tree depth, the best complexity parameter is 1e-10 and the tree depth is 15. 
+
+The steps performed above returned this tree model when applied to the data. 
 
 ```{r}
 tree_final_model <- extract_workflow(tree_final_fit) 
 tree_final_model
 ```
 
-While each node is complicated, the visualization helps us understand what the tree looks like. 
+While the model is complicated and it is difficult to clearly distinguish, the visualization helps us understand what the tree looks like.
 
 ```{r}
 tree_final_model |>
@@ -213,24 +219,29 @@ tree_final_model |>
 
 ### Random Forest
 
-```{r}
+Random forest classification models include the creation and average of many trees. Random samples of data are taken from the training data through bootstrapping. Then, a tree is fit to each individual sample. Finally, the predictions created by each tree are averaged together to come up with a final classification outcome or prediction. This is different from the process to create classification trees, which results in just one single tree. Random forest models can be better than classification models because the trees are more stable and less likely to be over-fitted to particular training data.
+
+```{r, warning=FALSE}
 rf_spec <- rand_forest(mtry = tune()) |>
   set_engine("ranger") |>
-  set_mode("classification")
+  set_mode("classification") #specifying a classification model
 
 rf_wkf <- workflow() |>
-  add_recipe(LR3_rec) |>
-  add_model(rf_spec)
+  #using the recipe from the third logistic regression model
+  #includes BMI, physical activity, and age group as predictors
+  add_recipe(LR3_rec) |> 
+  add_model(rf_spec) #random forest spec
 
+#defining a grid that has up to 3 parameters
 rf_grid <- grid_regular(mtry(range = c(1, 3)), levels = 3)
 
+#fitting the random forest based on specifications
 rf_fit <- rf_wkf |>
   tune_grid(resamples = diabetes_folds,
             grid = rf_grid,
             metrics = metric_set(mn_log_loss))
-```
 
-```{r}
+#Calculating the log loss for each combination of specifications
 rf_fit |>
   collect_metrics() |>
   filter(.metric == "mn_log_loss") |>
@@ -238,27 +249,28 @@ rf_fit |>
 ```
 
 ```{r}
-rf_fit |>
-  collect_metrics() |>
-  filter(.metric == "mn_log_loss")
-```
-
-```{r}
+#finding and displaying the best random forest model
 rf_best_params <- select_best(rf_fit, metric = "mn_log_loss")
 rf_best_params
 ```
 
+The best random forest model is when there are 3 parameters. 
+
 ```{r}
+#fitting the best random forest model on our data
+
 rf_final_wkf <- rf_wkf |>
  finalize_workflow(rf_best_params)
 
 rf_final_fit <- rf_final_wkf |>
  last_fit(diabetes_split, metrics = metric_set(mn_log_loss))
-```
 
-```{r}
 rf_final_fit |> collect_metrics()
 ```
+
+When applied to our data, the log loss is 0.3571243. This is a pretty good log loss value. 
+
+Displaying the workflow from the log loss model.
 
 ```{r}
 rf_final_model <- extract_workflow(rf_final_fit) 
@@ -267,21 +279,23 @@ rf_final_model
 
 ### Final Model Selection
 
-Final Metrics from the Logistic Regression Model
+#### Final Metrics from the Logistic Regression Model
 
 ```{r}
 LR1_fit |> collect_metrics()
 ```
 
-Final Metrics from the Classification Model
+#### Final Metrics from the Classification Model
 
 ```{r}
-tree_final_fit |>
-  collect_metrics()
+tree_fits |> collect_metrics() |>
+  filter(.config == "Preprocessor1_Model21")
 ```
 
-Final Metrics from the Random Forest Model
+#### Final Metrics from the Random Forest Model
 
 ```{r}
 rf_final_fit |> collect_metrics()
 ```
+
+To determine the best model, I will compare the log losses from each of the three different models that I fit. These results show that the logistic regression model is the best since it has the lowest log loss estimate (0.3570928). This was close to the log loss from the Random Forest Model (0.3571243). The log loss for the Classification Model was not far behind though at 0.3806938. 
