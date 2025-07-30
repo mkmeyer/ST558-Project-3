@@ -100,6 +100,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 </head>
 
@@ -133,212 +162,125 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
+<p>Before beginning to create models, it is important to load the necessary libraries!</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Loading packages</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"tidyverse"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'ggplot2' was built under R version 4.3.3</code></pre>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"tidyverse"</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"tidymodels"</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"caret"</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"yardstick"</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"baguette"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'tibble' was built under R version 4.3.3</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'purrr' was built under R version 4.3.3</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'lubridate' was built under R version 4.3.3</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-✔ dplyr     1.1.4     ✔ readr     2.1.5
-✔ forcats   1.0.0     ✔ stringr   1.5.1
-✔ ggplot2   3.5.2     ✔ tibble    3.3.0
-✔ lubridate 1.9.4     ✔ tidyr     1.3.1
-✔ purrr     1.0.4     
-── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-✖ dplyr::filter() masks stats::filter()
-✖ dplyr::lag()    masks stats::lag()
-ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"tidymodels"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'tidymodels' was built under R version 4.3.3</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Registered S3 method overwritten by 'future':
-  method               from      
-  all.equal.connection parallelly
-── Attaching packages ────────────────────────────────────── tidymodels 1.3.0 ──
-✔ broom        1.0.8     ✔ rsample      1.3.0
-✔ dials        1.4.0     ✔ tune         1.3.0
-✔ infer        1.0.9     ✔ workflows    1.2.0
-✔ modeldata    1.4.0     ✔ workflowsets 1.1.1
-✔ parsnip      1.3.2     ✔ yardstick    1.3.2
-✔ recipes      1.3.1     </code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'broom' was built under R version 4.3.3</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'dials' was built under R version 4.3.3</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'scales' was built under R version 4.3.3</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'infer' was built under R version 4.3.3</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'modeldata' was built under R version 4.3.3</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'parsnip' was built under R version 4.3.3</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'recipes' was built under R version 4.3.3</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'rsample' was built under R version 4.3.3</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'tune' was built under R version 4.3.3</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'workflows' was built under R version 4.3.3</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'workflowsets' was built under R version 4.3.3</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'yardstick' was built under R version 4.3.3</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>── Conflicts ───────────────────────────────────────── tidymodels_conflicts() ──
-✖ scales::discard() masks purrr::discard()
-✖ dplyr::filter()   masks stats::filter()
-✖ recipes::fixed()  masks stringr::fixed()
-✖ dplyr::lag()      masks stats::lag()
-✖ yardstick::spec() masks readr::spec()
-✖ recipes::step()   masks stats::step()</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"caret"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'caret' was built under R version 4.3.3</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: lattice</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'lattice' was built under R version 4.3.3</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'caret'
-
-The following objects are masked from 'package:yardstick':
-
-    precision, recall, sensitivity, specificity
-
-The following object is masked from 'package:purrr':
-
-    lift</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"yardstick"</span>)</span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"baguette"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'baguette' was built under R version 4.3.3</code></pre>
-</div>
-</div>
-<p>Loading in the cleaned data</p>
+<p>It is also important to load in and clean the data.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Reading in the data</span></span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>diabetes_data <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"diabetes_binary_health_indicators_BRFSS2015.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Reading in the data</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>diabetes_data <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"diabetes_binary_health_indicators_BRFSS2015.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Selecting response and 3 chosen explanatory variables</span></span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="co">#Converting categorical variables from numeric variables to factor variables</span></span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>diabetes_select <span class="ot">&lt;-</span> diabetes_data <span class="sc">|&gt;</span></span>
-<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">"diabetes_resp"</span> <span class="ot">=</span> Diabetes_binary) <span class="sc">|&gt;</span></span>
-<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">"bmi"</span> <span class="ot">=</span> BMI) <span class="sc">|&gt;</span></span>
-<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">"physical_activity"</span> <span class="ot">=</span> PhysActivity) <span class="sc">|&gt;</span></span>
-<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">"age"</span> <span class="ot">=</span> Age) <span class="sc">|&gt;</span></span>
-<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diabetes_resp =</span> <span class="fu">factor</span>(diabetes_resp, <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"No diabetes"</span>, <span class="st">"Prediabetes or diabetes"</span>))) <span class="sc">|&gt;</span></span>
-<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">physical_activity =</span> <span class="fu">factor</span>(physical_activity, <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"No physical activity"</span>, <span class="st">"Physical activity"</span>))) <span class="sc">|&gt;</span></span>
-<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">age =</span> <span class="fu">factor</span>(age, <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>, <span class="dv">10</span>, <span class="dv">11</span>, <span class="dv">12</span>, <span class="dv">13</span>), <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"Age 18-24"</span>, <span class="st">"Age 25-29"</span>, <span class="st">"Age 30-34"</span>, <span class="st">"Age 35-39"</span>, <span class="st">"Age 40-44"</span>, <span class="st">"Age 45-49"</span>, <span class="st">"Age 50-54"</span>, <span class="st">"Age 55-59"</span>, <span class="st">"Age 60-64"</span>, <span class="st">"Age 65-69"</span>, <span class="st">"Age 70-74"</span>, <span class="st">"Age 75-79"</span>, <span class="st">"Age 80 or older"</span>))) <span class="sc">|&gt;</span></span>
-<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">HvyAlcoholConsump =</span> <span class="fu">as.factor</span>(HvyAlcoholConsump)) <span class="sc">|&gt;</span></span>
-<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">AnyHealthcare =</span> <span class="fu">as.factor</span>(AnyHealthcare))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Selecting response and 3 chosen explanatory variables</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">#Converting categorical variables from numeric variables to factor variables</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>diabetes_select <span class="ot">&lt;-</span> diabetes_data <span class="sc">|&gt;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">"diabetes_resp"</span> <span class="ot">=</span> Diabetes_binary) <span class="sc">|&gt;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">"bmi"</span> <span class="ot">=</span> BMI) <span class="sc">|&gt;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">"phys_activity"</span> <span class="ot">=</span> PhysActivity) <span class="sc">|&gt;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">"age"</span> <span class="ot">=</span> Age) <span class="sc">|&gt;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diabetes_resp =</span> <span class="fu">factor</span>(diabetes_resp, <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"No diabetes"</span>, <span class="st">"Prediabetes or diabetes"</span>))) <span class="sc">|&gt;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">phys_activity =</span> <span class="fu">factor</span>(phys_activity, <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"No physical activity"</span>, <span class="st">"Physical activity"</span>))) <span class="sc">|&gt;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">age =</span> <span class="fu">factor</span>(age, <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>, <span class="dv">10</span>, <span class="dv">11</span>, <span class="dv">12</span>, <span class="dv">13</span>), <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"Age 18-24"</span>, <span class="st">"Age 25-29"</span>, <span class="st">"Age 30-34"</span>, <span class="st">"Age 35-39"</span>, <span class="st">"Age 40-44"</span>, <span class="st">"Age 45-49"</span>, <span class="st">"Age 50-54"</span>, <span class="st">"Age 55-59"</span>, <span class="st">"Age 60-64"</span>, <span class="st">"Age 65-69"</span>, <span class="st">"Age 70-74"</span>, <span class="st">"Age 75-79"</span>, <span class="st">"Age 80 or older"</span>))) <span class="sc">|&gt;</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">HvyAlcoholConsump =</span> <span class="fu">as.factor</span>(HvyAlcoholConsump)) <span class="sc">|&gt;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">AnyHealthcare =</span> <span class="fu">as.factor</span>(AnyHealthcare))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>In this project, I am analyzing data on diabetes. These data are a subset of the Behavioral Risk Factor Surveillance System (BRFSS) which is an annual telephone survey conducted by the Centers for Disease Control (CDC). This subset includes responses from 253,680 people and was collected in 2015. This dataset contains information on whether the person does not have diabetes or if they have either pre-diabetes or diabetes, in addition to other numeric and categorical health indicators. There are binary, indicator variables describing whether or not the person has a history of high blood pressure, high cholesterol, smoking, stroke, coronary heart disease (CHD) or myocardial infarction (MI), physical activity in the past 30 days, daily fruit consumption, daily veggie consumption, alcohol consumption, healthcare coverage, missing medical care due to cost, and difficulty walking.</p>
+<p>In the EDA, I chose to focus on 3 explanatory variables in particular (BMI, physical activity, and age) based on information from a CDC article published in 2024. In modeling, I will expand the variables I examine to include other potential factors. I wanted to choose factors that may capture new elements of a person’s overall health. That is, I wanted to pick variables where I wouldn’t necessarily expect to see strong correlations with BMI, physical activity, or age. I added the variables for heavy alcohol consumption and healthcare access. My goal is that the models I create will indicate whether the factors mentioned in the CDC article are sufficient to predict a diabetes diagnosis or if additional, new measures are also informative.</p>
 </section>
 <section id="modeling" class="level2">
 <h2 class="anchored" data-anchor-id="modeling">Modeling</h2>
 <section id="splitting-data-into-training-and-testing" class="level3">
 <h3 class="anchored" data-anchor-id="splitting-data-into-training-and-testing">Splitting Data into Training and Testing</h3>
+<p>The first step for modeling is to split data into training and testing sets. This allows us to create models using one set of data and then test those models on another, different set of data. This helps us make sure that our model is can actually predict patterns in the data rather than just inform us about the characteristics of the data we trained it on. In this case, we are splitting the data 70/30. This provides us a majority of the data to train on, which is useful because our model will be more informed, while it also leads sufficient data to test on.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1234</span>)</span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>diabetes_split <span class="ot">&lt;-</span> <span class="fu">initial_split</span>(diabetes_select, <span class="at">prop =</span> <span class="fl">0.70</span>) <span class="co">#specifying a 70/30 split</span></span>
-<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>diabetes_train <span class="ot">&lt;-</span> <span class="fu">training</span>(diabetes_split) <span class="co">#splitting training data</span></span>
-<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>diabetes_test <span class="ot">&lt;-</span> <span class="fu">testing</span>(diabetes_split) <span class="co">#splitting testing data</span></span>
-<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>diabetes_folds <span class="ot">&lt;-</span> <span class="fu">vfold_cv</span>(diabetes_train, <span class="dv">5</span>) <span class="co">#creating 10 fold CV of the training data</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1234</span>) <span class="co">#setting seed to allow for exact replication of the random selection used to split the data</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>diabetes_split <span class="ot">&lt;-</span> <span class="fu">initial_split</span>(diabetes_select, <span class="at">prop =</span> <span class="fl">0.70</span>) <span class="co">#specifying a 70/30 split</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>diabetes_train <span class="ot">&lt;-</span> <span class="fu">training</span>(diabetes_split) <span class="co">#splitting training data</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>diabetes_test <span class="ot">&lt;-</span> <span class="fu">testing</span>(diabetes_split) <span class="co">#splitting testing data</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>In addition to splitting the data into training and testing, we also use 5 fold cross validation. This allows us to use all of our data as both part of the training set and as part of the testing set, which helps us extract the most information and use from the data. In a 5 fold cross validation, 4 folds are used as training data and 1 fold is used as testiing data.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>diabetes_folds <span class="ot">&lt;-</span> <span class="fu">vfold_cv</span>(diabetes_train, <span class="dv">5</span>) <span class="co">#creating 10 fold CV of the training data</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="logistic-regression-models" class="level3">
 <h3 class="anchored" data-anchor-id="logistic-regression-models">Logistic Regression Models</h3>
+<p>The first type of model we will use is a logistic regression model. We use logistic regression models when the response variable is binary, as in this case where we have the responses 1 corresponding to pre-diabetes or diabetes and 0 corresponding to no diabetes, because there is no longer a continuous outcome that we are predicting. In that way, we can no longer predict the change in the outcome for a one unit increase in a predictor variable the way that we would in a linear regression. Instead, logistic regression allows us to predict the log odds and to interpret predictor variable coefficients for their impact on the log odds.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Creating the spec for logistic models</span></span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>LR_spec <span class="ot">&lt;-</span> <span class="fu">logistic_reg</span>() <span class="sc">|&gt;</span></span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"glm"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Creating the spec for logistic models</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>LR_spec <span class="ot">&lt;-</span> <span class="fu">logistic_reg</span>() <span class="sc">|&gt;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"glm"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<p>The first model I wanted to test includes all 5 predictors that I am curious about: BMI, physical activity, age, heavy alcohol consumption, and healthcare.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Creating the first logistic model using </span></span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="co">#Resting Blood Pressure, Sex, and Cholesterol as predictors</span></span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>LR1_rec <span class="ot">&lt;-</span> <span class="fu">recipe</span>(diabetes_resp <span class="sc">~</span> physical_activity <span class="sc">+</span> bmi <span class="sc">+</span> age <span class="sc">+</span> HvyAlcoholConsump <span class="sc">+</span> AnyHealthcare, <span class="at">data =</span> diabetes_train) <span class="sc">|&gt;</span></span>
-<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_normalize</span>(bmi) <span class="sc">|&gt;</span></span>
-<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_dummy</span>(physical_activity, age, HvyAlcoholConsump, AnyHealthcare)</span>
-<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>LR1_wkf <span class="ot">&lt;-</span> <span class="fu">workflow</span>() <span class="sc">|&gt;</span></span>
-<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(LR1_rec) <span class="sc">|&gt;</span></span>
-<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(LR_spec)</span>
-<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a>LR1_fit <span class="ot">&lt;-</span> LR1_wkf <span class="sc">|&gt;</span></span>
-<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fit_resamples</span>(diabetes_folds, <span class="at">metrics =</span> <span class="fu">metric_set</span>(mn_log_loss))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Creating the first logistic model using all 5 predictors</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co">#BMI, Physical Activity, Age, Heavy Alcohol Consumption, Any Healthcare</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>LR1_rec <span class="ot">&lt;-</span> <span class="fu">recipe</span>(diabetes_resp <span class="sc">~</span> phys_activity <span class="sc">+</span> bmi <span class="sc">+</span> age <span class="sc">+</span> HvyAlcoholConsump <span class="sc">+</span> AnyHealthcare, <span class="at">data =</span> diabetes_train) <span class="sc">|&gt;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">#normalizing the numeric variables</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_normalize</span>(bmi) <span class="sc">|&gt;</span> </span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">#creating dummy variables for the categorical variables</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_dummy</span>(phys_activity, age, HvyAlcoholConsump, AnyHealthcare)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>LR1_wkf <span class="ot">&lt;-</span> <span class="fu">workflow</span>() <span class="sc">|&gt;</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(LR1_rec) <span class="sc">|&gt;</span> <span class="co">#model 1 recipe</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(LR_spec) <span class="co">#logistic model spec</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="co">#finding the best coefficients for this model by resampling using 5 fold cross-validation</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>LR1_fit <span class="ot">&lt;-</span> LR1_wkf <span class="sc">|&gt;</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fit_resamples</span>(diabetes_folds, <span class="at">metrics =</span> <span class="fu">metric_set</span>(mn_log_loss))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<p>The second model I wanted to test includes 4 predictors (BMI, physical activity, heavy alcohol consumption, and healthcare access) but does not include the variable demographic variable age. I was curious whether demographics, which a person has less control over, play a role so I chose to create a model without them.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Creating the first logistic model using </span></span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="co">#Max heart rate, Age, and Sex as predictors</span></span>
-<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>LR2_rec <span class="ot">&lt;-</span> <span class="fu">recipe</span>(diabetes_resp <span class="sc">~</span> bmi <span class="sc">+</span> physical_activity <span class="sc">+</span> HvyAlcoholConsump <span class="sc">+</span> AnyHealthcare, <span class="at">data =</span> diabetes_train) <span class="sc">|&gt;</span></span>
-<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_dummy</span>(physical_activity, HvyAlcoholConsump, AnyHealthcare)</span>
-<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>LR2_wkf <span class="ot">&lt;-</span> <span class="fu">workflow</span>() <span class="sc">|&gt;</span></span>
-<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(LR2_rec) <span class="sc">|&gt;</span></span>
-<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(LR_spec)</span>
-<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>LR2_fit <span class="ot">&lt;-</span> LR2_wkf <span class="sc">|&gt;</span></span>
-<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fit_resamples</span>(diabetes_folds, <span class="at">metrics =</span> <span class="fu">metric_set</span>(mn_log_loss))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Creating the second logistic model using non-Demographic predictors</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co">#BMI, physical activity, heavy alcohol consumption, and healthcare as predictors</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>LR2_rec <span class="ot">&lt;-</span> <span class="fu">recipe</span>(diabetes_resp <span class="sc">~</span> bmi <span class="sc">+</span> phys_activity <span class="sc">+</span> HvyAlcoholConsump <span class="sc">+</span> AnyHealthcare, <span class="at">data =</span> diabetes_train) <span class="sc">|&gt;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">#normalizing the numeric variables</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_normalize</span>(bmi) <span class="sc">|&gt;</span> </span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">#creating dummy variables for the categorical variables</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_dummy</span>(phys_activity, HvyAlcoholConsump, AnyHealthcare)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>LR2_wkf <span class="ot">&lt;-</span> <span class="fu">workflow</span>() <span class="sc">|&gt;</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(LR2_rec) <span class="sc">|&gt;</span> <span class="co">#model 2 recipe</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(LR_spec) <span class="co">#logistic model spec</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="co">#finding the best coefficients for this model by resampling using 5 fold cross-validation</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>LR2_fit <span class="ot">&lt;-</span> LR2_wkf <span class="sc">|&gt;</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fit_resamples</span>(diabetes_folds, <span class="at">metrics =</span> <span class="fu">metric_set</span>(mn_log_loss))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<p>The third model I wanted to test includes only the 3 predictors I used in the EDA. I chose those 3 variables because they were mentioned in a CDC article about diabetes predictors. I am curious if this model performs better than the model with additional predictors, or if these three predictors are truly informative enough on their own such that adding more variables leads to overfitting.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Creating the first logistic model using </span></span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="co">#Max heart rate, Age, and Sex as predictors</span></span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>LR3_rec <span class="ot">&lt;-</span> <span class="fu">recipe</span>(diabetes_resp <span class="sc">~</span> bmi <span class="sc">+</span> physical_activity <span class="sc">+</span> age, <span class="at">data =</span> diabetes_train) <span class="sc">|&gt;</span></span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_normalize</span>(bmi) <span class="sc">|&gt;</span></span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_dummy</span>(physical_activity, age)</span>
-<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>LR3_wkf <span class="ot">&lt;-</span> <span class="fu">workflow</span>() <span class="sc">|&gt;</span></span>
-<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(LR3_rec) <span class="sc">|&gt;</span></span>
-<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(LR_spec)</span>
-<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>LR3_fit <span class="ot">&lt;-</span> LR3_wkf <span class="sc">|&gt;</span></span>
-<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fit_resamples</span>(diabetes_folds, <span class="at">metrics =</span> <span class="fu">metric_set</span>(mn_log_loss))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Creating the final logistic model using </span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co">#BMI, physical activity, and age as predictors</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>LR3_rec <span class="ot">&lt;-</span> <span class="fu">recipe</span>(diabetes_resp <span class="sc">~</span> bmi <span class="sc">+</span> phys_activity <span class="sc">+</span> age, <span class="at">data =</span> diabetes_train) <span class="sc">|&gt;</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">#normalizing the numeric variables</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_normalize</span>(bmi) <span class="sc">|&gt;</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">#creating dummy variables for the categorical variables</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_dummy</span>(phys_activity, age)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>LR3_wkf <span class="ot">&lt;-</span> <span class="fu">workflow</span>() <span class="sc">|&gt;</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(LR3_rec) <span class="sc">|&gt;</span> <span class="co">#model 3 recipe</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(LR_spec) <span class="co">#logistic model spec</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="co">#finding the best coefficients for this model by resampling using 5 fold cross-validation</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>LR3_fit <span class="ot">&lt;-</span> LR3_wkf <span class="sc">|&gt;</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fit_resamples</span>(diabetes_folds, <span class="at">metrics =</span> <span class="fu">metric_set</span>(mn_log_loss))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<p>Now, we can compare the three models by comparing their log loss values.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rbind</span>(LR1_fit <span class="sc">|&gt;</span> <span class="fu">collect_metrics</span>(),</span>
-<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>      LR2_fit <span class="sc">|&gt;</span> <span class="fu">collect_metrics</span>(),</span>
-<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>      LR3_fit <span class="sc">|&gt;</span> <span class="fu">collect_metrics</span>()) <span class="sc">|&gt;</span></span>
-<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Model =</span> <span class="fu">c</span>(<span class="st">"Model1"</span>, <span class="st">"Model2"</span>, <span class="st">"Model3"</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(Model, <span class="fu">everything</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rbind</span>(LR1_fit <span class="sc">|&gt;</span> <span class="fu">collect_metrics</span>(),</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>      LR2_fit <span class="sc">|&gt;</span> <span class="fu">collect_metrics</span>(),</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>      LR3_fit <span class="sc">|&gt;</span> <span class="fu">collect_metrics</span>()) <span class="sc">|&gt;</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Model =</span> <span class="fu">c</span>(<span class="st">"Model1"</span>, <span class="st">"Model2"</span>, <span class="st">"Model3"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(Model, <span class="fu">everything</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 3 × 7
   Model  .metric     .estimator  mean     n std_err .config             
@@ -348,79 +290,341 @@ The following object is masked from 'package:purrr':
 3 Model3 mn_log_loss binary     0.359     5 0.00182 Preprocessor1_Model1</code></pre>
 </div>
 </div>
+<p>The log loss values displayed above show that logistic regression model 1 (which had all 5 predictor variables) is the best model since it has the lowest log loss. Interestingly, model 1 and model 3 have very similar log loss values while model 2 is higher. Model 2 removed the age variable, indicating that demographics, specifically age, are highly relevant to predicting diabetes diagnosis. The similarity between model 1 and model 3 leads me to hypothesize that the two additional variables I added (heavy alcohol consumption and healthcare coverage) are not very impactful when the original variables (BMI, physical activity, and age) are present. It seems like overall the CDC’s identification of important variables holds up. That said, I will still use the full model (model 1) since it is the best model overall as it has the lowest log loss.</p>
 </section>
 <section id="classification-tree" class="level3">
 <h3 class="anchored" data-anchor-id="classification-tree">Classification Tree</h3>
+<p>A classification tree contains a series of binary questions based on the value of predictor variables from a dataset. The series of binary split points will eventually lead to a prediction of the response variable. Classification trees are useful because they can be used with both categorical and numeric predictors, and they can help capture complicated relationships amongst variables In this case, our predictor variables are BMI, physical activity, and age and our response variable is whether or not a person has diabetes. I chose to use the original CDC variables model with just BMI, physical activity, and age to make the tree simpler and with less computation cost.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co"># tree_rec &lt;- recipe(diabetes_resp ~ ., data = diabetes_train) |&gt;</span></span>
-<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="co">#   step_dummy(physical_activity, HvyAlcoholConsump, AnyHealthcare) |&gt;</span></span>
-<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   step_normalize(bmi, -all_outcomes())</span></span>
-<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
-<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a><span class="co"># tree_mod &lt;- decision_tree(tree_depth = tune(), min_n = 200, cost_complexity = tune()) |&gt;</span></span>
-<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a><span class="co">#   set_engine("rpart") |&gt;</span></span>
-<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a><span class="co">#   set_mode("classification")</span></span>
-<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
-<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a><span class="co"># tree_wkf &lt;- workflow() |&gt;</span></span>
-<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a><span class="co">#   add_recipe(tree_rec) |&gt;</span></span>
-<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a><span class="co">#   add_model(tree_mod)</span></span>
-<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
-<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a><span class="co"># tree_grid &lt;- grid_regular(cost_complexity(),</span></span>
-<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a><span class="co">#                           tree_depth(),</span></span>
-<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a><span class="co">#                           levels = c(10, 5))</span></span>
-<span id="cb39-16"><a href="#cb39-16" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
-<span id="cb39-17"><a href="#cb39-17" aria-hidden="true" tabindex="-1"></a><span class="co"># tree_fits &lt;- tree_wkf |&gt; </span></span>
-<span id="cb39-18"><a href="#cb39-18" aria-hidden="true" tabindex="-1"></a><span class="co">#   tune_grid(resamples = diabetes_folds,</span></span>
-<span id="cb39-19"><a href="#cb39-19" aria-hidden="true" tabindex="-1"></a><span class="co">#             grid = tree_grid, </span></span>
-<span id="cb39-20"><a href="#cb39-20" aria-hidden="true" tabindex="-1"></a><span class="co">#             metrics = metric_set(mn_log_loss))</span></span>
-<span id="cb39-21"><a href="#cb39-21" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
-<span id="cb39-22"><a href="#cb39-22" aria-hidden="true" tabindex="-1"></a><span class="co"># tree_fits |&gt; collect_metrics()</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>tree_rec <span class="ot">&lt;-</span> <span class="fu">recipe</span>(diabetes_resp <span class="sc">~</span> phys_activity <span class="sc">+</span> bmi <span class="sc">+</span> age, <span class="at">data =</span> diabetes_train) <span class="sc">|&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">#creating dummy variables for the categorical variables</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_dummy</span>(phys_activity, age) <span class="sc">|&gt;</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">#creating dummy variables for the categorical variables</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_normalize</span>(bmi, <span class="sc">-</span><span class="fu">all_outcomes</span>())</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>tree_mod <span class="ot">&lt;-</span> <span class="fu">decision_tree</span>(<span class="at">tree_depth =</span> <span class="fu">tune</span>(), <span class="at">min_n =</span> <span class="dv">200</span>, <span class="at">cost_complexity =</span> <span class="fu">tune</span>()) <span class="sc">|&gt;</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"rpart"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"classification"</span>) <span class="co">#specifying a classification model</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>tree_wkf <span class="ot">&lt;-</span> <span class="fu">workflow</span>() <span class="sc">|&gt;</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(tree_rec) <span class="sc">|&gt;</span> <span class="co">#classification tree recipe</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(tree_mod) <span class="co">#classification tree model spec</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a><span class="co">#Creating a grid of 25 combinations of 5 different cost complexity and tree depth levels</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>tree_grid <span class="ot">&lt;-</span> <span class="fu">grid_regular</span>(<span class="fu">cost_complexity</span>(),</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>                          <span class="fu">tree_depth</span>(),</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>                          <span class="at">levels =</span> <span class="dv">5</span>)</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>tree_fits <span class="ot">&lt;-</span> tree_wkf <span class="sc">|&gt;</span></span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tune_grid</span>(<span class="at">resamples =</span> diabetes_folds, <span class="co">#resampling of the 5 cross validation folds</span></span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>            <span class="at">grid =</span> tree_grid, <span class="co">#using the 25 combination grid from above</span></span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>            <span class="at">metrics =</span> <span class="fu">metric_set</span>(mn_log_loss)) <span class="co">#specifying log loss as the metric</span></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>tree_fits <span class="sc">|&gt;</span> <span class="fu">collect_metrics</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 25 × 8
+   cost_complexity tree_depth .metric     .estimator  mean     n std_err .config
+             &lt;dbl&gt;      &lt;int&gt; &lt;chr&gt;       &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;  
+ 1    0.0000000001          1 mn_log_loss binary     0.404     5 0.00217 Prepro…
+ 2    0.0000000178          1 mn_log_loss binary     0.404     5 0.00217 Prepro…
+ 3    0.00000316            1 mn_log_loss binary     0.404     5 0.00217 Prepro…
+ 4    0.000562              1 mn_log_loss binary     0.404     5 0.00217 Prepro…
+ 5    0.1                   1 mn_log_loss binary     0.404     5 0.00217 Prepro…
+ 6    0.0000000001          4 mn_log_loss binary     0.396     5 0.00711 Prepro…
+ 7    0.0000000178          4 mn_log_loss binary     0.396     5 0.00711 Prepro…
+ 8    0.00000316            4 mn_log_loss binary     0.396     5 0.00711 Prepro…
+ 9    0.000562              4 mn_log_loss binary     0.404     5 0.00217 Prepro…
+10    0.1                   4 mn_log_loss binary     0.404     5 0.00217 Prepro…
+# ℹ 15 more rows</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co">#identifying the ideal cost complexity and tree depth parameters</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>tree_best_params <span class="ot">&lt;-</span> <span class="fu">select_best</span>(tree_fits, <span class="at">metric =</span> <span class="st">"mn_log_loss"</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co">#applying the ideal parameters to the workflow</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>tree_final_wkf <span class="ot">&lt;-</span> tree_wkf <span class="sc">|&gt;</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">finalize_workflow</span>(tree_best_params)</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="co">#fitting the ideal classification tree to the data</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>tree_final_fit <span class="ot">&lt;-</span> tree_final_wkf <span class="sc">|&gt;</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">last_fit</span>(diabetes_split)</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="co">#returning the metrics from the classification tree on the whole data</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>tree_final_fit <span class="sc">|&gt;</span> <span class="fu">collect_metrics</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 4
+  .metric     .estimator .estimate .config             
+  &lt;chr&gt;       &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
+1 accuracy    binary         0.861 Preprocessor1_Model1
+2 roc_auc     binary         0.632 Preprocessor1_Model1
+3 brier_class binary         0.113 Preprocessor1_Model1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>tree_best_params</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 3
+  cost_complexity tree_depth .config              
+            &lt;dbl&gt;      &lt;int&gt; &lt;chr&gt;                
+1    0.0000000001         15 Preprocessor1_Model21</code></pre>
+</div>
+</div>
+<p>After creating 25 different combinations of cost complexity and tree depth, the best complexity parameter is 1e-10 and the tree depth is 15.</p>
+<p>The steps performed above returned this tree model when applied to the data.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>tree_final_model <span class="ot">&lt;-</span> <span class="fu">extract_workflow</span>(tree_final_fit) </span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>tree_final_model</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>══ Workflow [trained] ══════════════════════════════════════════════════════════
+Preprocessor: Recipe
+Model: decision_tree()
+
+── Preprocessor ────────────────────────────────────────────────────────────────
+2 Recipe Steps
+
+• step_dummy()
+• step_normalize()
+
+── Model ───────────────────────────────────────────────────────────────────────
+n= 177576 
+
+node), split, n, loss, yval, (yprob)
+      * denotes terminal node
+
+   1) root 177576 24802 No diabetes (0.86033022 0.13966978)  
+     2) bmi&lt; 0.4694849 134916 13408 No diabetes (0.90061964 0.09938036) *
+     3) bmi&gt;=0.4694849 42660 11394 No diabetes (0.73291139 0.26708861)  
+       6) age_Age.65.69&lt; 0.5 36893  9163 No diabetes (0.75163310 0.24836690)  
+        12) age_Age.70.74&lt; 0.5 33164  7685 No diabetes (0.76827283 0.23172717)  
+          24) age_Age.60.64&lt; 0.5 27091  5665 No diabetes (0.79088996 0.20911004)  
+            48) age_Age.75.79&lt; 0.5 25031  4882 No diabetes (0.80496185 0.19503815) *
+            49) age_Age.75.79&gt;=0.5 2060   783 No diabetes (0.61990291 0.38009709)  
+              98) bmi&lt; 1.676659 1762   642 No diabetes (0.63564132 0.36435868)  
+               196) phys_activity_Physical.activity&gt;=0.5 982   329 No diabetes (0.66496945 0.33503055) *
+               197) phys_activity_Physical.activity&lt; 0.5 780   313 No diabetes (0.59871795 0.40128205)  
+                 394) bmi&lt; 0.9221752 415   155 No diabetes (0.62650602 0.37349398) *
+                 395) bmi&gt;=0.9221752 365   158 No diabetes (0.56712329 0.43287671)  
+                   790) bmi&gt;=1.374865 131    51 No diabetes (0.61068702 0.38931298) *
+                   791) bmi&lt; 1.374865 234   107 No diabetes (0.54273504 0.45726496)  
+                    1582) bmi&lt; 1.223969 166    71 No diabetes (0.57228916 0.42771084) *
+                    1583) bmi&gt;=1.223969 68    32 Prediabetes or diabetes (0.47058824 0.52941176) *
+              99) bmi&gt;=1.676659 298   141 No diabetes (0.52684564 0.47315436) *
+          25) age_Age.60.64&gt;=0.5 6073  2020 No diabetes (0.66738021 0.33261979)  
+            50) bmi&lt; 0.9221752 2681   695 No diabetes (0.74076837 0.25923163) *
+            51) bmi&gt;=0.9221752 3392  1325 No diabetes (0.60937500 0.39062500)  
+             102) bmi&lt; 1.676659 2038   737 No diabetes (0.63837095 0.36162905) *
+             103) bmi&gt;=1.676659 1354   588 No diabetes (0.56573117 0.43426883)  
+               206) bmi&gt;=4.996388 70    18 No diabetes (0.74285714 0.25714286) *
+               207) bmi&lt; 4.996388 1284   570 No diabetes (0.55607477 0.44392523)  
+                 414) bmi&lt; 3.03473 1044   441 No diabetes (0.57758621 0.42241379) *
+                 415) bmi&gt;=3.03473 240   111 Prediabetes or diabetes (0.46250000 0.53750000) *
+        13) age_Age.70.74&gt;=0.5 3729  1478 No diabetes (0.60364709 0.39635291)  
+          26) bmi&lt; 1.374865 2734  1008 No diabetes (0.63130944 0.36869056) *
+          27) bmi&gt;=1.374865 995   470 No diabetes (0.52763819 0.47236181)  
+            54) phys_activity_Physical.activity&gt;=0.5 508   221 No diabetes (0.56496063 0.43503937)  
+             108) bmi&gt;=2.280246 114    42 No diabetes (0.63157895 0.36842105) *
+             109) bmi&lt; 2.280246 394   179 No diabetes (0.54568528 0.45431472)  
+               218) bmi&lt; 1.676659 211    87 No diabetes (0.58767773 0.41232227) *
+               219) bmi&gt;=1.676659 183    91 Prediabetes or diabetes (0.49726776 0.50273224) *
+            55) phys_activity_Physical.activity&lt; 0.5 487   238 Prediabetes or diabetes (0.48870637 0.51129363)  
+             110) bmi&lt; 2.129349 301   141 No diabetes (0.53156146 0.46843854) *
+             111) bmi&gt;=2.129349 186    78 Prediabetes or diabetes (0.41935484 0.58064516) *
+       7) age_Age.65.69&gt;=0.5 5767  2231 No diabetes (0.61314375 0.38685625)  
+        14) bmi&lt; 1.073072 3151  1058 No diabetes (0.66423358 0.33576642) *
+        15) bmi&gt;=1.073072 2616  1173 No diabetes (0.55160550 0.44839450)  
+          30) phys_activity_Physical.activity&gt;=0.5 1455   588 No diabetes (0.59587629 0.40412371)  
+            60) bmi&lt; 1.978452 1084   422 No diabetes (0.61070111 0.38929889) *
+            61) bmi&gt;=1.978452 371   166 No diabetes (0.55256065 0.44743935)  
+             122) bmi&gt;=3.48742 68    21 No diabetes (0.69117647 0.30882353) *
+
+...
+and 14 more lines.</code></pre>
+</div>
+</div>
+<p>While the model is complicated and it is difficult to clearly distinguish, the visualization helps us understand what the tree looks like.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>tree_final_model <span class="sc">|&gt;</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_fit_engine</span>() <span class="sc">|&gt;</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  rpart.plot<span class="sc">::</span><span class="fu">rpart.plot</span>(<span class="at">roundint =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Modeling_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
 </div>
 </section>
 <section id="random-forest" class="level3">
 <h3 class="anchored" data-anchor-id="random-forest">Random Forest</h3>
+<p>Random forest classification models include the creation and average of many trees. Random samples of data are taken from the training data through bootstrapping. Then, a tree is fit to each individual sample. Finally, the predictions created by each tree are averaged together to come up with a final classification outcome or prediction. This is different from the process to create classification trees, which results in just one single tree. Random forest models can be better than classification models because the trees are more stable and less likely to be over-fitted to particular training data.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="co"># rf_spec &lt;- rand_forest(mtry = tune()) |&gt;</span></span>
-<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="co">#   set_engine("ranger") |&gt;</span></span>
-<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   set_mode("classification")</span></span>
-<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
-<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a><span class="co"># rf_wkf &lt;- workflow() |&gt;</span></span>
-<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a><span class="co">#   add_recipe(LR1_rec) |&gt;</span></span>
-<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a><span class="co">#   add_model(rf_spec)</span></span>
-<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
-<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a><span class="co"># rf_fit &lt;- rf_wkf |&gt;</span></span>
-<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a><span class="co">#   tune_grid(resamples = diabetes_folds,</span></span>
-<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a><span class="co">#             grid = 7,</span></span>
-<span id="cb40-12"><a href="#cb40-12" aria-hidden="true" tabindex="-1"></a><span class="co">#             metrics = metric_set(accuracy, mn_log_loss))</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>rf_spec <span class="ot">&lt;-</span> <span class="fu">rand_forest</span>(<span class="at">mtry =</span> <span class="fu">tune</span>()) <span class="sc">|&gt;</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"ranger"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"classification"</span>) <span class="co">#specifying a classification model</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>rf_wkf <span class="ot">&lt;-</span> <span class="fu">workflow</span>() <span class="sc">|&gt;</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">#using the recipe from the third logistic regression model</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">#includes BMI, physical activity, and age group as predictors</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(LR3_rec) <span class="sc">|&gt;</span> </span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(rf_spec) <span class="co">#random forest spec</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a><span class="co">#defining a grid that has up to 3 parameters</span></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>rf_grid <span class="ot">&lt;-</span> <span class="fu">grid_regular</span>(<span class="fu">mtry</span>(<span class="at">range =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">3</span>)), <span class="at">levels =</span> <span class="dv">3</span>)</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a><span class="co">#fitting the random forest based on specifications</span></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>rf_fit <span class="ot">&lt;-</span> rf_wkf <span class="sc">|&gt;</span></span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tune_grid</span>(<span class="at">resamples =</span> diabetes_folds,</span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>            <span class="at">grid =</span> rf_grid,</span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>            <span class="at">metrics =</span> <span class="fu">metric_set</span>(mn_log_loss))</span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a><span class="co">#Calculating the log loss for each combination of specifications</span></span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>rf_fit <span class="sc">|&gt;</span></span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect_metrics</span>() <span class="sc">|&gt;</span></span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.metric <span class="sc">==</span> <span class="st">"mn_log_loss"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(mean)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 7
+   mtry .metric     .estimator  mean     n std_err .config             
+  &lt;int&gt; &lt;chr&gt;       &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
+1     3 mn_log_loss binary     0.358     5 0.00179 Preprocessor1_Model3
+2     2 mn_log_loss binary     0.365     5 0.00193 Preprocessor1_Model2
+3     1 mn_log_loss binary     0.381     5 0.00213 Preprocessor1_Model1</code></pre>
+</div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="co"># rf_fit |&gt;</span></span>
-<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a><span class="co">#   collect_metrics() |&gt;</span></span>
-<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   filter(.metric == "mn_log_loss") |&gt;</span></span>
-<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a><span class="co">#   arrange(mean)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co">#finding and displaying the best random forest model</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>rf_best_params <span class="ot">&lt;-</span> <span class="fu">select_best</span>(rf_fit, <span class="at">metric =</span> <span class="st">"mn_log_loss"</span>)</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>rf_best_params</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 2
+   mtry .config             
+  &lt;int&gt; &lt;chr&gt;               
+1     3 Preprocessor1_Model3</code></pre>
 </div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="co"># rf_fit |&gt; </span></span>
-<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="co">#   collect_metrics() |&gt;</span></span>
-<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   filter(.metric == "mn_log_loss")</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<p>The best random forest model is when there are 3 parameters.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="co"># rf_best_params &lt;- select_best(rf_fit, metric = "mn_log_loss")</span></span>
-<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a><span class="co"># rf_best_params</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co">#fitting the best random forest model on our data</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>rf_final_wkf <span class="ot">&lt;-</span> rf_wkf <span class="sc">|&gt;</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a> <span class="fu">finalize_workflow</span>(rf_best_params)</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>rf_final_fit <span class="ot">&lt;-</span> rf_final_wkf <span class="sc">|&gt;</span></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a> <span class="fu">last_fit</span>(diabetes_split, <span class="at">metrics =</span> <span class="fu">metric_set</span>(mn_log_loss))</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>rf_final_fit <span class="sc">|&gt;</span> <span class="fu">collect_metrics</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 4
+  .metric     .estimator .estimate .config             
+  &lt;chr&gt;       &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
+1 mn_log_loss binary         0.357 Preprocessor1_Model1</code></pre>
 </div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="co"># rf_final_wkf &lt;- rf_wkf |&gt;</span></span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a><span class="co">#  finalize_workflow(rf_best_params)</span></span>
-<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a><span class="co"># rf_final_fit &lt;- rf_final_wkf |&gt;</span></span>
-<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a><span class="co">#  last_fit(diabetes_split, metrics = metric_set(mn_log_loss))</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<p>When applied to our data, the log loss is 0.3571243. This is a pretty good log loss value.</p>
+<p>Displaying the workflow from the log loss model.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="co"># rf_final_fit |&gt; collect_metrics()</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>rf_final_model <span class="ot">&lt;-</span> <span class="fu">extract_workflow</span>(rf_final_fit) </span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>rf_final_model</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>══ Workflow [trained] ══════════════════════════════════════════════════════════
+Preprocessor: Recipe
+Model: rand_forest()
+
+── Preprocessor ────────────────────────────────────────────────────────────────
+2 Recipe Steps
+
+• step_normalize()
+• step_dummy()
+
+── Model ───────────────────────────────────────────────────────────────────────
+Ranger result
+
+Call:
+ ranger::ranger(x = maybe_data_frame(x), y = y, mtry = min_cols(~3L,      x), num.threads = 1, verbose = FALSE, seed = sample.int(10^5,      1), probability = TRUE) 
+
+Type:                             Probability estimation 
+Number of trees:                  500 
+Sample size:                      177576 
+Number of independent variables:  14 
+Mtry:                             3 
+Target node size:                 10 
+Variable importance mode:         none 
+Splitrule:                        gini 
+OOB prediction error (Brier s.):  0.1084494 </code></pre>
+</div>
 </div>
 </section>
 <section id="final-model-selection" class="level3">
 <h3 class="anchored" data-anchor-id="final-model-selection">Final Model Selection</h3>
+<section id="final-metrics-from-the-logistic-regression-model" class="level4">
+<h4 class="anchored" data-anchor-id="final-metrics-from-the-logistic-regression-model">Final Metrics from the Logistic Regression Model</h4>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>LR1_fit <span class="sc">|&gt;</span> <span class="fu">collect_metrics</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 6
+  .metric     .estimator  mean     n std_err .config             
+  &lt;chr&gt;       &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
+1 mn_log_loss binary     0.357     5 0.00192 Preprocessor1_Model1</code></pre>
+</div>
+</div>
+</section>
+<section id="final-metrics-from-the-classification-model" class="level4">
+<h4 class="anchored" data-anchor-id="final-metrics-from-the-classification-model">Final Metrics from the Classification Model</h4>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>tree_fits <span class="sc">|&gt;</span> <span class="fu">collect_metrics</span>() <span class="sc">|&gt;</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.config <span class="sc">==</span> <span class="st">"Preprocessor1_Model21"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 8
+  cost_complexity tree_depth .metric     .estimator  mean     n std_err .config 
+            &lt;dbl&gt;      &lt;int&gt; &lt;chr&gt;       &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;   
+1    0.0000000001         15 mn_log_loss binary     0.380     5 0.00232 Preproc…</code></pre>
+</div>
+</div>
+</section>
+<section id="final-metrics-from-the-random-forest-model" class="level4">
+<h4 class="anchored" data-anchor-id="final-metrics-from-the-random-forest-model">Final Metrics from the Random Forest Model</h4>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>rf_final_fit <span class="sc">|&gt;</span> <span class="fu">collect_metrics</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 4
+  .metric     .estimator .estimate .config             
+  &lt;chr&gt;       &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
+1 mn_log_loss binary         0.357 Preprocessor1_Model1</code></pre>
+</div>
+</div>
+<p>To determine the best model, I will compare the log losses from each of the three different models that I fit. These results show that the logistic regression model is the best since it has the lowest log loss estimate (0.3570928). This was close to the log loss from the Random Forest Model (0.3571243). The log loss for the Classification Model was not far behind though at 0.3806938.</p>
+<p>The form of the fitted model on the whole data is:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>LR1_wkf <span class="sc">%&gt;%</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fit</span>(<span class="at">data =</span> diabetes_select) <span class="sc">%&gt;%</span></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidy</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 17 × 5
+   term                            estimate std.error statistic   p.value
+   &lt;chr&gt;                              &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+ 1 (Intercept)                       -3.86    0.122     -31.6   2.36e-219
+ 2 bmi                                0.557   0.00579    96.1   0        
+ 3 phys_activity_Physical.activity   -0.434   0.0130    -33.4   4.73e-244
+ 4 age_Age.25.29                      0.131   0.148       0.884 3.77e-  1
+ 5 age_Age.30.34                      0.478   0.133       3.59  3.27e-  4
+ 6 age_Age.35.39                      1.05    0.126       8.38  5.08e- 17
+ 7 age_Age.40.44                      1.41    0.123      11.5   1.34e- 30
+ 8 age_Age.45.49                      1.76    0.121      14.5   1.78e- 47
+ 9 age_Age.50.54                      2.11    0.120      17.5   8.40e- 69
+10 age_Age.55.59                      2.31    0.120      19.3   5.48e- 83
+11 age_Age.60.64                      2.61    0.120      21.8   9.47e-106
+12 age_Age.65.69                      2.85    0.119      23.8   1.09e-125
+13 age_Age.70.74                      2.99    0.120      24.9   2.70e-137
+14 age_Age.75.79                      2.99    0.120      24.8   2.94e-136
+15 age_Age.80.or.older                2.91    0.120      24.2   5.78e-129
+16 HvyAlcoholConsump_X1              -0.827   0.0373    -22.2   8.55e-109
+17 AnyHealthcare_X1                  -0.107   0.0310     -3.43  5.93e-  4</code></pre>
+</div>
+</div>
+<p><span class="math inline">\(y = -3.86 + 0.557*bmi - 0.434*phys_activity + 0.130 * Age25-29 + 0.478 * Age30-34 + 1.055 * Age 35-39 + 1.415 * Age 40-44 + 1.757 * Age 45-49 + 2.107 * Age 50-54+ 2.312 * Age 55-59 + 2.610 * Age60-64 + 2.849 * Age 65-69 + 2.986 * Age 70-74 + 2.989 * Age 75-79 + 2.909 * Age 80+ - 0.827 * HvyAlcoholConsump - 0.107 * AnyHealthcare\)</span></p>
 
 
+</section>
 </section>
 </section>
 

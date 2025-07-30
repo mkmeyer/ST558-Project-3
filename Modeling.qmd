@@ -33,10 +33,10 @@ diabetes_data <- read.csv("diabetes_binary_health_indicators_BRFSS2015.csv")
 diabetes_select <- diabetes_data |>
   rename("diabetes_resp" = Diabetes_binary) |>
   rename("bmi" = BMI) |>
-  rename("physical_activity" = PhysActivity) |>
+  rename("phys_activity" = PhysActivity) |>
   rename("age" = Age) |>
   mutate(diabetes_resp = factor(diabetes_resp, levels = c(0, 1), labels = c("No diabetes", "Prediabetes or diabetes"))) |>
-  mutate(physical_activity = factor(physical_activity, levels = c(0, 1), labels = c("No physical activity", "Physical activity"))) |>
+  mutate(phys_activity = factor(phys_activity, levels = c(0, 1), labels = c("No physical activity", "Physical activity"))) |>
   mutate(age = factor(age, levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), labels = c("Age 18-24", "Age 25-29", "Age 30-34", "Age 35-39", "Age 40-44", "Age 45-49", "Age 50-54", "Age 55-59", "Age 60-64", "Age 65-69", "Age 70-74", "Age 75-79", "Age 80 or older"))) |>
   mutate(HvyAlcoholConsump = as.factor(HvyAlcoholConsump)) |>
   mutate(AnyHealthcare = as.factor(AnyHealthcare))
@@ -83,11 +83,11 @@ The first model I wanted to test includes all 5 predictors that I am curious abo
 ```{r}
 #Creating the first logistic model using all 5 predictors
 #BMI, Physical Activity, Age, Heavy Alcohol Consumption, Any Healthcare
-LR1_rec <- recipe(diabetes_resp ~ physical_activity + bmi + age + HvyAlcoholConsump + AnyHealthcare, data = diabetes_train) |>
+LR1_rec <- recipe(diabetes_resp ~ phys_activity + bmi + age + HvyAlcoholConsump + AnyHealthcare, data = diabetes_train) |>
   #normalizing the numeric variables
   step_normalize(bmi) |> 
   #creating dummy variables for the categorical variables
-  step_dummy(physical_activity, age, HvyAlcoholConsump, AnyHealthcare)
+  step_dummy(phys_activity, age, HvyAlcoholConsump, AnyHealthcare)
 
 LR1_wkf <- workflow() |>
   add_recipe(LR1_rec) |> #model 1 recipe
@@ -103,11 +103,11 @@ The second model I wanted to test includes 4 predictors (BMI, physical activity,
 ```{r}
 #Creating the second logistic model using non-Demographic predictors
 #BMI, physical activity, heavy alcohol consumption, and healthcare as predictors
-LR2_rec <- recipe(diabetes_resp ~ bmi + physical_activity + HvyAlcoholConsump + AnyHealthcare, data = diabetes_train) |>
+LR2_rec <- recipe(diabetes_resp ~ bmi + phys_activity + HvyAlcoholConsump + AnyHealthcare, data = diabetes_train) |>
   #normalizing the numeric variables
   step_normalize(bmi) |> 
   #creating dummy variables for the categorical variables
-  step_dummy(physical_activity, HvyAlcoholConsump, AnyHealthcare)
+  step_dummy(phys_activity, HvyAlcoholConsump, AnyHealthcare)
 
 LR2_wkf <- workflow() |>
   add_recipe(LR2_rec) |> #model 2 recipe
@@ -123,11 +123,11 @@ The third model I wanted to test includes only the 3 predictors I used in the ED
 ```{r}
 #Creating the final logistic model using 
 #BMI, physical activity, and age as predictors
-LR3_rec <- recipe(diabetes_resp ~ bmi + physical_activity + age, data = diabetes_train) |>
+LR3_rec <- recipe(diabetes_resp ~ bmi + phys_activity + age, data = diabetes_train) |>
   #normalizing the numeric variables
   step_normalize(bmi) |>
   #creating dummy variables for the categorical variables
-  step_dummy(physical_activity, age)
+  step_dummy(phys_activity, age)
 
 LR3_wkf <- workflow() |>
   add_recipe(LR3_rec) |> #model 3 recipe
@@ -155,9 +155,9 @@ The log loss values displayed above show that logistic regression model 1 (which
 A classification tree contains a series of binary questions based on the value of predictor variables from a dataset. The series of binary split points will eventually lead to a prediction of the response variable. Classification trees are useful because they can be used with both categorical and numeric predictors, and they can help capture complicated relationships amongst variables In this case, our predictor variables are BMI, physical activity, and age and our response variable is whether or not a person has diabetes. I chose to use the original CDC variables model with just BMI, physical activity, and age to make the tree simpler and with less computation cost.
 
 ```{r, warning=FALSE}
-tree_rec <- recipe(diabetes_resp ~ physical_activity + bmi + age, data = diabetes_train) |>
+tree_rec <- recipe(diabetes_resp ~ phys_activity + bmi + age, data = diabetes_train) |>
   #creating dummy variables for the categorical variables
-  step_dummy(physical_activity, age) |>
+  step_dummy(phys_activity, age) |>
   #creating dummy variables for the categorical variables
   step_normalize(bmi, -all_outcomes())
 
@@ -299,3 +299,14 @@ rf_final_fit |> collect_metrics()
 ```
 
 To determine the best model, I will compare the log losses from each of the three different models that I fit. These results show that the logistic regression model is the best since it has the lowest log loss estimate (0.3570928). This was close to the log loss from the Random Forest Model (0.3571243). The log loss for the Classification Model was not far behind though at 0.3806938. 
+
+The form of the fitted model on the whole data is:
+
+```{r}
+LR1_wkf %>%
+  fit(data = diabetes_select) %>%
+  tidy()
+```
+
+
+$y = -3.86 + 0.557*bmi - 0.434*phys_activity + 0.130 * Age25-29 + 0.478 * Age30-34 + 1.055 * Age 35-39 + 1.415 * Age 40-44 + 1.757 * Age 45-49 + 2.107 * Age 50-54+ 2.312 * Age 55-59 + 2.610 * Age60-64 + 2.849 * Age 65-69 + 2.986 * Age 70-74 + 2.989 * Age 75-79 + 2.909 * Age 80+ - 0.827 * HvyAlcoholConsump - 0.107 * AnyHealthcare$

@@ -207,7 +207,7 @@ ggplot(data = age_groups, aes(x = age, y = count, fill = diabetes)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-The counts and percentages displayed in the table and the visual bar chart reveal that diabetes diagnoses are slightly more prevalent among older people. This effect appears to peak around the ages of 60-80. 
+The counts and percentages displayed in the table and the visual bar chart reveal that diabetes diagnoses are slightly more prevalent among older people. This effect appears to peak around the ages of 60-80.
 
 ### Summarizing Center and Spread
 
@@ -232,6 +232,6 @@ p <- ggplot(diabetes_select, aes(x = bmi, fill = diabetes_resp)) +
 p
 ```
 
-The table of mean BMIs and the plot show that those with pre-diabetes or diabetes have higher BMIs than those who do not. 
+The table of mean BMIs and the plot show that those with pre-diabetes or diabetes have higher BMIs than those who do not.
 
 [Click here for the Modeling Page](Modeling.html)
