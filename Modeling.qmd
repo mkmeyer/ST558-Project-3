@@ -118,7 +118,7 @@ LR2_fit <- LR2_wkf |>
   fit_resamples(diabetes_folds, metrics = metric_set(mn_log_loss))
 ```
 
-The third model I wanted to test includes only the 3 predictors I used in the EDA. I chose those 3 variables because they were mentioned in a CDC article about diabetes predictors. I am curious if this model performs better than the model with additional predictors, or if these three predictors are truly informative enough on their own such that adding more variables leads to over parameterization. 
+The third model I wanted to test includes only the 3 predictors I used in the EDA. I chose those 3 variables because they were mentioned in a CDC article about diabetes predictors. I am curious if this model performs better than the model with additional predictors, or if these three predictors are truly informative enough on their own such that adding more variables leads to overfitting. 
 
 ```{r}
 #Creating the final logistic model using 
@@ -138,6 +138,8 @@ LR3_fit <- LR3_wkf |>
   fit_resamples(diabetes_folds, metrics = metric_set(mn_log_loss))
 ```
 
+Now, we can compare the three models by comparing their log loss values. 
+
 ```{r}
 rbind(LR1_fit |> collect_metrics(),
       LR2_fit |> collect_metrics(),
@@ -146,24 +148,30 @@ rbind(LR1_fit |> collect_metrics(),
   select(Model, everything())
 ```
 
+The log loss values displayed above show that logistic regression model 1 (which had all 5 predictor variables) is the best model since it has the lowest log loss. Interestingly, model 1 and model 3 have very similar log loss values while model 2 is higher. Model 2 removed the age variable, indicating that demographics, specifically age, are highly relevant to predicting diabetes diagnosis. The similarity between model 1 and model 3 leads me to hypothesize that the two additional variables I added (heavy alcohol consumption and healthcare coverage) are not very impactful when the original variables (BMI, physical activity, and age) are present. It seems like overall the CDC's identification of important variables holds up. That said, I will still use the full model (model 1) since it is the best model overall as it has the lowest log loss. 
+
 ### Classification Tree
 
+A classification tree contains a series of binary questions based on the value of predictor variables from a dataset. The series of binary split points will eventually lead to a prediction of the response variable. In this case, our predictor variables are BMI, physical activity, and age and our response variable is whether or not a person has diabetes. I chose to use the original CDC variables model to make the tree simpler. 
+
 ```{r, warning=FALSE}
-tree_rec <- recipe(diabetes_resp ~ physical_activity + bmi + age + HvyAlcoholConsump + AnyHealthcare, data = diabetes_train) |>
-  step_dummy(physical_activity, HvyAlcoholConsump, AnyHealthcare) |>
+tree_rec <- recipe(diabetes_resp ~ physical_activity + bmi + age, data = diabetes_train) |>
+  #creating dummy variables for the categorical variables
+  step_dummy(physical_activity, age) |>
+  #creating dummy variables for the categorical variables
   step_normalize(bmi, -all_outcomes())
 
 tree_mod <- decision_tree(tree_depth = tune(), min_n = 200, cost_complexity = tune()) |>
   set_engine("rpart") |>
-  set_mode("classification")
+  set_mode("classification") #specifying a classification model
 
 tree_wkf <- workflow() |>
-  add_recipe(tree_rec) |>
-  add_model(tree_mod)
+  add_recipe(tree_rec) |> #classification tree recipe
+  add_model(tree_mod) #classification tree model spec
 
 tree_grid <- grid_regular(cost_complexity(),
                           tree_depth(),
-                          levels = c(10, 5))
+                          levels = 5)
 
 tree_fits <- tree_wkf |>
   tune_grid(resamples = diabetes_folds,

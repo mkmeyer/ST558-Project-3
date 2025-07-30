@@ -70,6 +70,8 @@ After selecting our four variables, we check for missingness. None of our 4 vari
 
 Before looking at the bivariate relationship between the 3 explanatory variables and the response variable, whether or not the person has diabetes, we will look at each of the variables individually.
 
+#### BMI
+
 First, we will look at BMI. BMI is a numeric variable that ranges from 12 to 98 and is calculated by (weight in kg)/(height in meters)\^2.A summary of important statistics for BMI is below.
 
 ```{r}
@@ -81,27 +83,72 @@ diabetes_select |>
                                     "IQR" = IQR), .names = "{.col} {.fn}"))
 ```
 
+In general, the mean and median for BMI are very similar. This indicates that the data are roughly distributed symmetrically rather than skewed. However, we also see that there is decent variance. I am curious to explore that variance further and understand how the variance could potentially relate to diabetes diagnoses. 
+
+#### Physical Activity 
+
 Second, we will look at the variable for physical activity. This is a binary variable where the value of 1 indicates that the person had done some physical activity outside of their job in the last 30 days while a value of 0 indicates that they had not.
 
 ```{r}
-
+addmargins(table(diabetes_select$phys_activity))
 ```
+
+```{r}
+# Creating a Pie Chart to better visualize physical activity distribution 
+# Used pie chart instructions from: https://r-graph-gallery.com/piechart-ggplot2.html
+
+#Preparing the data
+phys_act_data <- diabetes_select |>
+  count(phys_activity) |>
+  mutate(percent = n / sum(n) * 100)
+
+# Plot
+ggplot(phys_act_data, aes(x = "", y = percent, fill = phys_activity)) +
+  geom_col(width = 1) +
+  coord_polar(theta = "y") +
+  labs(title = "Outcome Distribution", x = NULL, y = NULL, fill = "Last 30 Days Physical Activity") +
+  theme_void()
+```
+
+In general, this table and plot show that most people in the dataset are physically active (it looks like around 75% are). However, 25% are not. I am curious what the distribution of diabetes or prediabetes diagnosis looks like within the two groups.
+
+#### Age Groups
 
 Third, we will look at the last explanatory variable--age groups. This is a categorical variable with 13 levels each reflecting an age group. The 13 groups are: Age 18-24, Age 25-29, Age 30-34, Age 35-39, Age 40-44, Age 45-49, Age 50-54, Age 55-59, Age 60-64, Age 65-69, Age 70-74, Age 75-79, and Age 80 or older.
 
 ```{r}
-
+addmargins(table(diabetes_select$age))
 ```
-
-Finally, we will look at the response variable. This variable describes whether or not the person has diabetes or prediabetes. A value of 1 means yes and a value of 0 means no.
 
 ```{r}
+age_groups <- diabetes_select |>
+  group_by(age) |>
+  summarize(count = n())
 
+ggplot(data = age_groups, aes(x = age, y = count)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Age Groups", x = "Age Group", 
+       y = "Count") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
+
+This plot shows that there is a gentle left  skew in the age group data. Overall, it appears like we have a lot of observations from many different age groups as each group n is at least 5,700. The CDC article stated that diabetes is more common in people aged 45 and above. I am curious how the distribution of diabetes overlaps with the distribution of age groups.
+
+#### Diabetes
+
+Finally, we will look at the response variable. This variable describes whether or not the person has diabetes or pre-diabetes. A value of 1 means yes and a value of 0 means no.
+
+```{r}
+addmargins(table(diabetes_select$diabetes_resp))
+```
+
+This table shows that not being diagnosed with diabetes is significantly more common than having a pre-diabetes or diabetes diagnosis. I am mostly curious how the distribution of diabetes changes based on the level of predictor variables. I will explore that further in the following contingency tables and bar charts. 
 
 ### Contingency Tables and Bar Charts
 
 We will use contingency tables and bar charts to assess if there is a difference in diabetes rates at different levels of categorical variables.
+
+#### Physical Activity
 
 First, we will look at diabetes rates among people who do physical activity vs those who do not.
 
@@ -130,6 +177,8 @@ ggplot(data = phys_act_groups,
        y = "Count", fill = "Diabetes Response")
 ```
 
+#### Age Groups
+
 Next, we will look at diabetes rates across the 13 different age groups.
 
 ```{r, message=FALSE}
@@ -157,6 +206,8 @@ ggplot(data = age_groups, aes(x = age, y = count, fill = diabetes)) +
 ```
 
 ### Summarizing Center and Spread
+
+#### BMI
 
 ```{r}
 diabetes_select |>
